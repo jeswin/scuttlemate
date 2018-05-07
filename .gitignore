@@ -27,7 +27,7 @@ node_modules
 # Users Environment Variables
 .lock-wscript
 
-#Nothing in dist
 dist/*
+db/scuttlemate.sqlite
 
 .DS_Store

@@ -1,14 +1,15 @@
-import * as publish from "./publish";
+import * as db from "./db";
+import * as publish from "./modules/publish";
 
 const ssbClient = require("ssb-client");
 
-async function init() {
+async function main() {
+  await db.init();  
   await publish.init();
-  
-  ssbClient(function(err: any, sbot: any) {
-    // ...  
-  });  
+
+  ssbClient((err: any, sbot: any) => {
+    
+  });
 }
 
-init();
-
+main();

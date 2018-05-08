@@ -22,7 +22,7 @@ async function main() {
   let lastTime = now;
   ssbClient((err: any, sbot: any) => {
     pull(
-      sbot.createLogStream({ limit: 1000, gte: lastProcessedTimestamp }),
+      sbot.createLogStream({ gte: lastProcessedTimestamp }),
       pull.drain((item: any) => {
         counter++;
         if (counter % 1000 === 0) {

@@ -1,15 +1,6 @@
 import { createTable } from "../../db";
 
-export async function init() {
-  await createTable(
-    "publish_users",
-    `CREATE TABLE publish_users (
-      id	INTEGER PRIMARY KEY AUTOINCREMENT,
-      pubkey	TEXT,
-      nickname	TEXT
-    )`
-  );
-
+export async function setup() {
   await createTable(
     "publish_posts",
     `CREATE TABLE publish_posts (

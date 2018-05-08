@@ -15,23 +15,22 @@ export const topic = createTopic<IMessage, IUserData>()(
 
 /*
   Get an id for yourself
-  publish as jeswin
+  @scuttlespace publish as jeswin
 
   Publish as a post with url (with url scuttle.space/jeswin/about-scuttlekit)
-  publish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 at about-scuttlekit
+  @scuttlespace publish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 at about-scuttlekit
 
-  Publish a multi-part post
-  publish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 %/39AvPNoE3IqkDD6hhbwwUxCsSBWmAqaJU61HEAN+00=.sha256
-  at about-scuttlekit
+  Publish a multi-part post to scuttle.space/jeswin/about-scuttlekit
+  @scuttlespace publish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 %/39AvPNoE3IqkDD6hhbwwUxCsSBWmAqaJU61HEAN+00=.sha256 at about-scuttlekit
 
   Publish a post along with replies 
-  publish thread %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 at about-scuttlekit
+  @scuttlespace publish thread %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256 at about-scuttlekit
 
   Unpublish
-  unpublish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256
+  @scuttlespace unpublish %/0AC79/Exv9w7CZBNhT1ikOIiTqvulaIRBXIedpwo/g=.sha256
 
   Unpublish with url
-  unpublish about-scuttlekit
+  @scuttlespace unpublish about-scuttlekit
 */
 
 export const conditions = [] as any;

@@ -1,6 +1,9 @@
 import { getDb } from "./db";
 
-export async function getLastTimestamp() {
+export async function getLastProcessedTimestamp() {
   const db = await getDb();
-    
+  const row = db
+    .prepare(`SELECT value FROM settings WHERE key='last_processed_timestamp'`)
+    .get();
+  return parseInt(row.value, 10);
 }

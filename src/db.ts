@@ -8,29 +8,15 @@ export async function getDb() {
   return db;
 }
 
-export async function createTable(table: string, createStatement: string) {
+export async function databaseExists() {
   const database = await getDb();
   const query = database.prepare(
-    `SELECT name FROM sqlite_master WHERE type='table' AND name=@table;`
+    `SELECT name FROM sqlite_master WHERE type='table';`
   );
-  const created = query.all({ table }).length > 0;
-  if (!created) {
-    db.prepare(createStatement).run();
-  } else {
-    console.log(`${table} already exists.`);
-  }
+  return query.all().length > 0;
 }
 
-export async function init() {
-  await createTable(
-    "settings",
-    `CREATE TABLE settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      key	TEXT,
-      value	TEXT
-    )`
-  );
-  
-  const database = await getDb();
-  database.prepare()
+export async function createTable(table: string, createStatement: string) {
+  db.prepare(createStatement).run();
+  console.log(`Created ${table} table.`);
 }

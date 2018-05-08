@@ -25,37 +25,12 @@ async function main() {
   const handler = init(topics);
 
   ssbClient((err: any, sbot: any) => {
-    pull(
-      sbot.createLogStream({ gte: lastProcessedTimestamp }),
-      processMessage
-      // pull.drain((item: any) => {
-      //   if (postIsCommand(item)) {
-      //     const command = item.value.content.text
-      //       .substring(
-      //         item.value.content.text.indexOf(botPublicKey) +
-      //           botPublicKey.length +
-      //           1
-      //       )
-      //       .trim();
-      //   }
-      // })
-    );
+    pull(sbot.createLogStream({ gte: lastProcessedTimestamp }), processMessage);
   });
 }
 
-let counter = 0;
-const now = Date.now();
-let last = now;
 function processMessage(read: any) {
   read(null, function next(end: boolean, item: any) {
-    counter++;
-
-    if (counter % 1000 === 0) {
-      console.log(`${counter / 1000}K messages processed.`);
-      console.log(1000000 / (Date.now() - last), "per second");
-      last = Date.now();
-    }
-
     if (end === true) {
       return;
     }

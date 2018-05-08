@@ -1,8 +1,4 @@
-import {
-  IApplicationState,
-  IRegexParseResult,
-  regexParse
-} from "wild-yak";
+import { IApplicationState, IRegexParseResult, regexParse } from "wild-yak";
 
 import * as publish from "./publish";
 
@@ -18,3 +14,6 @@ export interface IUserData {
 export function regex<TContextData, TUserData>(patterns: Array<RegExp>) {
   return regexParse<TContextData, IMessage, TUserData>(patterns, x => x.text);
 }
+
+const topics: any = [];
+export default topics;

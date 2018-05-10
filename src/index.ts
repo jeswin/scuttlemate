@@ -5,7 +5,6 @@ import * as db from "./db";
 import * as feed from "./feed";
 import * as publish from "./modules/publish";
 import * as settings from "./settings";
-import topics from "./topics";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
@@ -21,8 +20,6 @@ async function main() {
 
   const lastProcessedTimestamp = await feed.getLastProcessedTimestamp();
   console.log("last_processed_timestamp:", lastProcessedTimestamp);
-
-  const handler = init(topics);
 
   ssbClient((err: any, sbot: any) => {
     pull(sbot.createLogStream({ gte: lastProcessedTimestamp }), processMessage);

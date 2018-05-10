@@ -16,7 +16,6 @@ export interface IHost {
 
 export type ResultType = string | number | undefined;
 
-
 export class RootTopic extends TopicBase<IMessage, ResultType, IUserData, IHost>
   implements ITopic<IMessage, ResultType, IUserData, IHost> {
   async handle(
@@ -67,4 +66,8 @@ export class DefaultTopic
   isTopLevel() {
     return true;
   }
+}
+
+export function getHandler() {
+  return 1;
 }

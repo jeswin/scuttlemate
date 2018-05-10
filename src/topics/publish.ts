@@ -1,3 +1,6 @@
+import { IEvalState, IHandlerResult, ITopic, TopicBase } from "wild-yak";
+
+import { IHost, IMessage, IUserData, ResultType } from "./index";
 
 export class MathTopic extends TopicBase<IMessage, ResultType, IUserData, IHost>
   implements ITopic<IMessage, ResultType, IUserData, IHost> {

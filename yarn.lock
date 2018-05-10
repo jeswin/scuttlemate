@@ -576,9 +576,9 @@ ultron@1.0.x:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.0.2.tgz#ace116ab557cd197386a4e88f4685378c8b2e4fa"
 
-wild-yak@^0.0.18:
-  version "0.0.18"
-  resolved "https://registry.yarnpkg.com/wild-yak/-/wild-yak-0.0.18.tgz#a6b2b3b1bb27a688c30bfc714f717f12d2763866"
+wild-yak@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/wild-yak/-/wild-yak-1.0.3.tgz#1a2d4867c9a8d241ab4a6809f1467bfedc15f61c"
   dependencies:
     "@types/node" "^10.0.4"
 

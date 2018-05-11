@@ -48,6 +48,7 @@ function processMessage(read: any) {
         )
         .trim();
 
+      
       handler(toMessage(item), state, getUserData(), getHost())
         .then(response => {
           feed

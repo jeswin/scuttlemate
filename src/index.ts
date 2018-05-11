@@ -1,10 +1,12 @@
 import { Msg, PostContent } from "ssb-typescript";
-import { init } from "wild-yak";
+import { init, ISerializableEvalState } from "wild-yak";
 import { botPublicKey } from "./config";
 import * as db from "./db";
 import * as feed from "./feed";
 import * as publish from "./modules/publish";
 import * as settings from "./settings";
+import { getHandler, IMessage, IUserData, IHost } from "./topics";
+import { log } from "./logger";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
@@ -26,29 +28,42 @@ async function main() {
   });
 }
 
+const handler = getHandler();
+
 function processMessage(read: any) {
-  read(null, function next(end: boolean, item: any) {
-    if (end === true) {
-      return;
-    }
-    if (end) {
-      throw end;
-    }
+  (function doProcessMessage(state?: ISerializableEvalState) {
+    read(null, function next(end: boolean, item: any) {
+      if (end === true) {
+        return;
+      }
+      if (end) {
+        throw end;
+      }
 
-    if (postIsCommand(item)) {
-      const command = item.value.content.text
-        .substring(
-          item.value.content.text.indexOf(botPublicKey) +
-            botPublicKey.length +
-            1
-        )
-        .trim();
+      if (postIsCommand(item)) {
+        const command = item.value.content.text
+          .substring(
+            item.value.content.text.indexOf(botPublicKey) +
+              botPublicKey.length +
+              1
+          )
+          .trim();
 
-      console.log(command);
-    }
-
-    read(null, next);
-  });
+        handler(toMessage(item), state, getUserData(), getHost())
+          .then(response => {
+            feed
+              .respond(response.result)
+              .catch((err: Error) =>
+                log(err.message, "OUTBOUND_RESPONSE_FAIL")
+              );
+            doProcessMessage(response.state);
+          })
+          .catch((err: any) => read(null, next));
+      } else {
+        read(null, next);
+      }
+    });
+  })();
 }
 
 function postIsCommand(item: any): item is Msg<PostContent> {
@@ -60,6 +75,29 @@ function postIsCommand(item: any): item is Msg<PostContent> {
     Array.isArray(item.value.content.mentions) &&
     item.value.content.mentions.some((x: any) => x.link === botPublicKey)
   );
+}
+
+function toMessage(item: Msg<PostContent>): IMessage {
+  return {
+    author: item.value.author,
+    branch: item.value.content.branch,
+    channel: item.value.content.channel,
+    mentions: item.value.content.mentions,
+    root: item.value.content.root,
+    text: item.value.content.text,
+    timestamp: item.timestamp,
+    type: item.value.content.type
+  };
+}
+
+function getUserData(): IUserData {
+  return {
+    botPublicKey
+  };
+}
+
+function getHost(): IHost {
+  return {};
 }
 
 main();

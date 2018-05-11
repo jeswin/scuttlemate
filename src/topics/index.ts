@@ -1,18 +1,28 @@
-import { IEvalState, IHandlerResult, ITopic, TopicBase } from "wild-yak";
+import {
+  Handler,
+  IEvalState,
+  IHandlerResult,
+  init,
+  ITopic,
+  TopicBase
+} from "wild-yak";
 
 export interface IMessage {
-  timestamp?: number;
+  author: string;
+  branch?: string | string[];
+  channel?: string;
+  mentions?: string[];
+  root?: string;
   text: string;
+  timestamp: number;
+  type: string;
 }
 
 export interface IUserData {
-  username: string;
-  session: string;
+  botPublicKey: string;
 }
 
-export interface IHost {
-  getUserDirectory(username: string): string;
-}
+export interface IHost {}
 
 export type ResultType = string | number | undefined;
 
@@ -24,27 +34,8 @@ export class RootTopic extends TopicBase<IMessage, ResultType, IUserData, IHost>
     userData: IUserData,
     host: IHost
   ): Promise<IHandlerResult<ResultType>> {
-    if (message.text === "do basic math") {
-      this.enterTopic(state, new MathTopic());
-      return { handled: true, result: "You can type a math expression" };
-    } else if (message.text === "help") {
-      this.enterTopic(state, new HelpTopic());
-      return {
-        handled: true,
-        result: "You're entering help mode. Type anything."
-      };
-    } else if (message.text === "reset password") {
-      this.enterTopic(state, new PasswordResetTopic());
-      return {
-        handled: true,
-        result: "Set your password."
-      };
-    } else {
-      return {
-        handled: true,
-        result:
-          "Life is like riding a bicycle. To keep your balance you must keep moving."
-      };
+    return {
+      handled: false
     }
   }
 }
@@ -68,6 +59,6 @@ export class DefaultTopic
   }
 }
 
-export function getHandler() {
-  return 1;
+export function getHandler(): Handler<IMessage, ResultType, IUserData, IHost> {
+  return init(RootTopic, DefaultTopic, []);
 }

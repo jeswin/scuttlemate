@@ -31,39 +31,35 @@ async function main() {
 const handler = getHandler();
 
 function processMessage(read: any) {
-  (function doProcessMessage(state?: ISerializableEvalState) {
-    read(null, function next(end: boolean, item: any) {
-      if (end === true) {
-        return;
-      }
-      if (end) {
-        throw end;
-      }
+  read(null, function next(end: boolean, item: any) {
+    if (end === true) {
+      return;
+    }
+    if (end) {
+      throw end;
+    }
 
-      if (postIsCommand(item)) {
-        const command = item.value.content.text
-          .substring(
-            item.value.content.text.indexOf(botPublicKey) +
-              botPublicKey.length +
-              1
-          )
-          .trim();
+    if (postIsCommand(item)) {
+      const command = item.value.content.text
+        .substring(
+          item.value.content.text.indexOf(botPublicKey) +
+            botPublicKey.length +
+            1
+        )
+        .trim();
 
-        handler(toMessage(item), state, getUserData(), getHost())
-          .then(response => {
-            feed
-              .respond(response.result)
-              .catch((err: Error) =>
-                log(err.message, "OUTBOUND_RESPONSE_FAIL")
-              );
-            doProcessMessage(response.state);
-          })
-          .catch((err: any) => read(null, next));
-      } else {
-        read(null, next);
-      }
-    });
-  })();
+      handler(toMessage(item), state, getUserData(), getHost())
+        .then(response => {
+          feed
+            .respond(response.result)
+            .catch((err: Error) => log(err.message, "OUTBOUND_RESPONSE_FAIL"));
+          read(response.state);
+        })
+        .catch((err: any) => read(null, next));
+    } else {
+      read(null, next);
+    }
+  });
 }
 
 function postIsCommand(item: any): item is Msg<PostContent> {
@@ -88,16 +84,6 @@ function toMessage(item: Msg<PostContent>): IMessage {
     timestamp: item.timestamp,
     type: item.value.content.type
   };
-}
-
-function getUserData(): IUserData {
-  return {
-    botPublicKey
-  };
-}
-
-function getHost(): IHost {
-  return {};
 }
 
 main();

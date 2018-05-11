@@ -1,8 +1,8 @@
 import { IEvalState, IHandlerResult, ITopic, TopicBase } from "wild-yak";
+import { IHost, IMessage, IUserData, ResultType } from "../";
 
-import { IHost, IMessage, IUserData, ResultType } from "./index";
-
-export class MathTopic extends TopicBase<IMessage, ResultType, IUserData, IHost>
+export default class PublishTopic
+  extends TopicBase<IMessage, ResultType, IUserData, IHost>
   implements ITopic<IMessage, ResultType, IUserData, IHost> {
   async handle(
     state: IEvalState<IMessage, ResultType, IUserData, IHost>,

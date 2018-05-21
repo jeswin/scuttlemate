@@ -418,6 +418,12 @@ separator-escape@0.0.0:
   version "0.0.0"
   resolved "https://registry.yarnpkg.com/separator-escape/-/separator-escape-0.0.0.tgz#e433676932020454e3c14870c517ea1de56c2fa4"
 
+serialist@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/serialist/-/serialist-0.0.3.tgz#3981bf2befcd0b07471bc157a05fb1308d0046c0"
+  dependencies:
+    "@types/node" "^10.0.6"
+
 sha.js@2.4.5:
   version "2.4.5"
   resolved "https://registry.yarnpkg.com/sha.js/-/sha.js-2.4.5.tgz#27d171efcc82a118b99639ff581660242b506e7c"
@@ -579,12 +585,6 @@ tweetnacl@0.x.x, tweetnacl@^0.14.1:
 ultron@1.0.x:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.0.2.tgz#ace116ab557cd197386a4e88f4685378c8b2e4fa"
-
-wild-yak@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/wild-yak/-/wild-yak-1.1.0.tgz#1480518f74b273adcb00d74fd1d0fc44943fdad3"
-  dependencies:
-    "@types/node" "^10.0.6"
 
 wrappy@1:
   version "1.0.2"

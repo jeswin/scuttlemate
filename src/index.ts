@@ -1,12 +1,11 @@
 import { Msg, PostContent } from "ssb-typescript";
-import { init, ISerializableEvalState } from "wild-yak";
 import { botPublicKey } from "./config";
 import * as db from "./db";
 import * as feed from "./feed";
+import { log } from "./logger";
+import { handle, INormalizedMessage } from "./modules";
 import * as publish from "./modules/publish";
 import * as settings from "./settings";
-import { getHandler, IMessage, IUserData, IHost } from "./topics";
-import { log } from "./logger";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
@@ -28,9 +27,7 @@ async function main() {
   });
 }
 
-const handler = getHandler();
-
-function processMessage(read: any) {
+async function processMessage(read: any) {
   read(null, function next(end: boolean, item: any) {
     if (end === true) {
       return;
@@ -48,15 +45,12 @@ function processMessage(read: any) {
         )
         .trim();
 
-      
-      handler(toMessage(item), state, getUserData(), getHost())
-        .then(response => {
-          feed
-            .respond(response.result)
-            .catch((err: Error) => log(err.message, "OUTBOUND_RESPONSE_FAIL"));
-          read(response.state);
-        })
-        .catch((err: any) => read(null, next));
+      handle(toMessage(item)).then(response => {
+        feed
+          .respond(response)
+          .catch((err: Error) => log(err.message, "OUTBOUND_RESPONSE_FAIL"));
+        read(null, next);
+      });
     } else {
       read(null, next);
     }
@@ -74,7 +68,7 @@ function postIsCommand(item: any): item is Msg<PostContent> {
   );
 }
 
-function toMessage(item: Msg<PostContent>): IMessage {
+function toMessage(item: Msg<PostContent>): INormalizedMessage {
   return {
     author: item.value.author,
     branch: item.value.content.branch,

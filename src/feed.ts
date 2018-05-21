@@ -1,5 +1,4 @@
 import { getDb } from "./db";
-import { ResultType } from "./topics";
 
 export async function getLastProcessedTimestamp() {
   const db = await getDb();
@@ -9,4 +8,6 @@ export async function getLastProcessedTimestamp() {
   return parseInt(row.value, 10);
 }
 
-export async function respond(response: ResultType) {}
+export async function respond(message: string) {
+  
+}

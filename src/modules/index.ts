@@ -13,6 +13,6 @@ export interface IConversationState {
   contexts: string[];
 }
 
-export function getHandler() {
-  
+export async function handle(message: IMessage): Promise<string> {
+  return "";
 }

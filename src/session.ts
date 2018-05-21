@@ -1,12 +1,5 @@
-
-export interface ISession {
-  appState: 
-}
-
 export async function getSession(pubkey: string) {
-  return {}
+  return {};
 }
 
-export async function getState(pubkey: string) {
-
-}
+export async function getState(pubkey: string) {}

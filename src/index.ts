@@ -3,8 +3,7 @@ import { botPublicKey } from "./config";
 import * as db from "./db";
 import * as feed from "./feed";
 import { log } from "./logger";
-import { handle, INormalizedMessage } from "./modules";
-import * as publish from "./modules/publish";
+import { handle, setup as setupModules, IMessage, toMessage } from "./modules";
 import * as settings from "./settings";
 
 const pull = require("pull-stream");
@@ -16,7 +15,7 @@ async function main() {
   const exists = await db.databaseExists();
   if (!exists) {
     await settings.setup();
-    await publish.setup();
+    await setupModules();
   }
 
   const lastProcessedTimestamp = await feed.getLastProcessedTimestamp();
@@ -37,15 +36,8 @@ async function processMessage(read: any) {
     }
 
     if (postIsCommand(item)) {
-      const command = item.value.content.text
-        .substring(
-          item.value.content.text.indexOf(botPublicKey) +
-            botPublicKey.length +
-            1
-        )
-        .trim();
-
-      handle(toMessage(item)).then(response => {
+      const message = toMessage(item);
+      handle(message).then(response => {
         feed
           .respond(response)
           .catch((err: Error) => log(err.message, "OUTBOUND_RESPONSE_FAIL"));
@@ -66,19 +58,6 @@ function postIsCommand(item: any): item is Msg<PostContent> {
     Array.isArray(item.value.content.mentions) &&
     item.value.content.mentions.some((x: any) => x.link === botPublicKey)
   );
-}
-
-function toMessage(item: Msg<PostContent>): INormalizedMessage {
-  return {
-    author: item.value.author,
-    branch: item.value.content.branch,
-    channel: item.value.content.channel,
-    mentions: item.value.content.mentions,
-    root: item.value.content.root,
-    text: item.value.content.text,
-    timestamp: item.timestamp,
-    type: item.value.content.type
-  };
 }
 
 main();

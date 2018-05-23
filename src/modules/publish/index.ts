@@ -1,4 +1,5 @@
 import { createTable } from "../../db";
+import { IMessage } from "..";
 
 export async function setup() {
   await createTable(
@@ -9,4 +10,8 @@ export async function setup() {
       tags	TEXT
     )`
   );
+}
+
+export async function handle(command: string, message: IMessage) {
+  return "";
 }

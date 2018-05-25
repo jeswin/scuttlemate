@@ -25,5 +25,39 @@ export async function handle(
 ): Promise<IHandlerResponse | void> {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand === "publish") {
+    await publishThread();
+  } else if (lcaseCommand.startsWith("publish to ")) {
   }
 }
+
+/*
+  A user just says "publish" on a thread. 
+  The first item in the thread is taken as the post.
+  We also verify that the user is the author of that post.
+  */
+async function publishThread() {}
+
+/*
+    A user says "publish to some-url" on a thread.
+    The first item in the thread is taken as the post.
+    The final url will be /username/pub/some-url
+*/
+async function publishToUrl() {}
+
+/*
+  A user says "publish with title some-title" on a thread.
+  The first item in the thread is taken as the post.
+  The final url will be /username/pub/some-url
+*/
+async function publishWithTitle() {}
+
+/*
+  Get the title of the post from the first heading.
+  If we don't find a heading, use "untitled".
+*/
+async function getPostTitle() {
+}
+
+/*
+  Get the 
+*/

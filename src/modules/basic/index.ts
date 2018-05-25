@@ -35,21 +35,26 @@ async function checkUserExistence(
 
   const query =
     "SELECT * FROM users WHERE username=$username OR pubkey=$pubkey";
-  const result = db.prepare(query).get({ username, pubkey });
+  const results = db.prepare(query).all({ username, pubkey });
 
-  return result
-    ? result.pubkey === pubkey && result.username === username
+  return results.length
+    ? results.length === 1 &&
+      results[0].pubkey === pubkey &&
+      results[0].username === username
       ? { type: "ALREADY_CREATED" }
-      : result.username === username
+      : results.some(r => r.username === username)
         ? { type: "EXISTS" }
-        : { type: "ALIAS_EXISTS", data: result.username }
+        : {
+            data: results.find(r => r.pubkey === pubkey).username,
+            type: "ALIAS_EXISTS"
+          }
     : { type: "DOESNT_EXIST" };
 }
 
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
   const stmt =
-    "INSERT INTO users (pubkey, username) VALUES ($pubkey, $username)";
+    "INSERT INTO users (username, pubkey) VALUES ($username, $pubkey)";
   db.prepare(stmt).run({ username, pubkey });
 
   // Create home dir.
@@ -94,7 +99,7 @@ export async function handle(command: string, message: IMessage) {
         return {
           message: [
             `Your profile is now accessible at https://scuttle.space/${username}.`,
-            `To learn how to use scuttlespace, see https://scuttle.space/help`
+            `To learn how to use scuttlespace, see https://scuttle.space/help.`
           ].join(`\r\n`)
         };
       } else if (accountStatus.type === "EXISTS") {

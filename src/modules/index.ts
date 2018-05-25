@@ -1,5 +1,6 @@
 import { Msg, PostContent } from "ssb-typescript";
 import { botPublicKey } from "../config";
+import * as basic from "./basic";
 import * as publish from "./publish";
 
 export interface IMessage {
@@ -30,12 +31,15 @@ export function toMessage(item: Msg<PostContent>): IMessage {
   };
 }
 
-interface ScuttleSpaceModule {
-  handle(command: string, message: IMessage): Promise<string>;
-  setup() : Promise<void>
+interface IScuttleSpaceModule {
+  handle(
+    command: string,
+    message: IMessage
+  ): Promise<IHandlerResponse | void>;
+  setup(): Promise<void>;
 }
 
-const modules: ScuttleSpaceModule[] = [publish];
+const modules: IScuttleSpaceModule[] = [basic, publish];
 
 export async function setup() {
   for (const mod of modules) {
@@ -43,7 +47,19 @@ export async function setup() {
   }
 }
 
-export async function handle(message: IMessage): Promise<string> {
+async function loadState(pubkey: string) {}
+
+async function saveState(state: any, pubkey: string) {}
+
+export interface IHandlerResponse {
+  message?: string;
+}
+
+export async function handle(
+  msg: Msg<PostContent>
+): Promise<IHandlerResponse> {
+  const state = await loadState(msg.value.author);
+  const message = toMessage(msg);
   const command = message.text
     .substring(message.text.indexOf(botPublicKey) + botPublicKey.length + 1)
     .trim();
@@ -51,9 +67,12 @@ export async function handle(message: IMessage): Promise<string> {
   for (const mod of modules) {
     const result = await mod.handle(command, message);
     if (result) {
+      saveState(state, msg.value.author);
       return result;
     }
   }
 
-  return "I did not follow. TODO: Help link.";
+  // We did not get a response.
+  saveState(state, msg.value.author);
+  return { message: "I did not follow. TODO: Help link." };
 }

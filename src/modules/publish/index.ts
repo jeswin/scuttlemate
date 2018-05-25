@@ -1,5 +1,5 @@
+import { IHandlerResponse, IMessage,  } from "..";
 import { createTable } from "../../db";
-import { IMessage } from "..";
 
 export async function setup() {
   await createTable(
@@ -12,6 +12,17 @@ export async function setup() {
   );
 }
 
-export async function handle(command: string, message: IMessage) {
-  return "";
+function isValidUsername(username: string) {
+  const regex = /^[a-z][a-z0-9_]+$/;
+  return regex.test(username);
+}
+
+export async function handle(
+  command: string,
+  message: IMessage
+): Promise<IHandlerResponse | void> {
+  const lcaseCommand = command.toLowerCase();
+  if (lcaseCommand === "publish") {
+    
+  }
 }

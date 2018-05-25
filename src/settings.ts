@@ -10,15 +10,6 @@ export async function setup() {
     )`
   );
 
-  await createTable(
-    "users",
-    `CREATE TABLE users (
-        id	INTEGER PRIMARY KEY AUTOINCREMENT,
-        pubkey	TEXT,
-        nickname	TEXT
-      )`
-  );
-
   const db = await getDb();
 
   db

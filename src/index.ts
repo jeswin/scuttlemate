@@ -12,8 +12,12 @@ const ssbClient = require("ssb-client");
 let lastProcessedTimestamp: number;
 let previouslyWrittenTimestamp: number;
 
+let counter = 0;
+const startTime = Date.now();
+let counterLogTime = startTime;
+
 async function main() {
-  console.log("bot started at:", Date.now());
+  console.log("bot started at:", startTime);
 
   const exists = await db.databaseExists();
   if (!exists) {
@@ -30,23 +34,25 @@ async function main() {
 
   ssbClient((err: any, sbot: any) => {
     pull(
-      sbot.createLogStream({ gte: lastProcessedTimestamp }),
+      sbot.createLogStream({
+        gte: lastProcessedTimestamp + 1,
+        live: true,
+        private: true
+      }),
       processMessage(sbot)
     );
   });
 }
-
-let counter = 0;
-let startTime = Date.now();
 
 function processMessage(sbot: any) {
   return async (read: any) => {
     read(null, function next(end: boolean, item: Msg<any>) {
       if (counter > 0 && counter % 10000 === 0) {
         console.log(
-          `Processed the last 10k messages in ${Date.now() - startTime}ms.`
+          `Processed the last 10k messages (of ${counter /
+            1000}k so far) in ${Date.now() - counterLogTime}ms.`
         );
-        startTime = Date.now();
+        counterLogTime = Date.now();
       }
       counter++;
       if (end === true) {
@@ -56,8 +62,9 @@ function processMessage(sbot: any) {
         throw end;
       }
 
-      // see if this is a private message.
-      function onMessage() {
+      if (item && item.value) {
+        lastProcessedTimestamp = item.timestamp;
+
         if (postIsCommand(item)) {
           handle(item).then(response => {
             feed
@@ -65,27 +72,13 @@ function processMessage(sbot: any) {
               .catch((err: Error) =>
                 log(err.message, "OUTBOUND_RESPONSE_FAIL")
               );
-            lastProcessedTimestamp = item.timestamp;
             read(null, next);
           });
         } else {
           read(null, next);
         }
-      }
-
-      if (item && item.value && typeof item.value.content === "string") {
-        console.log("pvt msg")
-        sbot.private.unbox(item.value.content, (err: any, content: any) => {
-          console.log(lastProcessedTimestamp)
-          if (content) {
-            console.log("Processing encrypted message...", content);
-            item.value.content = content;
-          }
-          onMessage();
-        });
       } else {
-        console.log("pub msg")
-        onMessage();
+        read(null, next);
       }
     });
   };

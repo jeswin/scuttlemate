@@ -21,3 +21,12 @@ export async function createTable(table: string, createStatement: string) {
   db.prepare(createStatement).run();
   console.log(`Created ${table} table.`);
 }
+
+export async function createIndexes(table: string, fields: string[]) {
+  const indexName = `${table}_${fields.join("_")}`;
+  const db = await getDb();
+  db
+    .prepare(`CREATE INDEX ${indexName} ON ${table}(${fields.join(", ")})`)
+    .run();
+  console.log(`Created index ${indexName} ON ${table}(${fields.join(", ")}).`);
+}

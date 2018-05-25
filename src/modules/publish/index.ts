@@ -1,5 +1,5 @@
-import { IHandlerResponse, IMessage,  } from "..";
-import { createTable } from "../../db";
+import { IHandlerResponse, IMessage } from "..";
+import { createIndexes, createTable } from "../../db";
 
 export async function setup() {
   await createTable(
@@ -10,6 +10,8 @@ export async function setup() {
       tags	TEXT
     )`
   );
+
+  await createIndexes("publish_posts", ["ssb_id"]);
 }
 
 function isValidUsername(username: string) {
@@ -23,6 +25,5 @@ export async function handle(
 ): Promise<IHandlerResponse | void> {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand === "publish") {
-    
   }
 }

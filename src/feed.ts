@@ -15,4 +15,6 @@ export async function updateLastProcessedTimestamp(timestamp: number) {
   db.prepare(stmt).run({ timestamp });
 }
 
-export async function respond(response: IHandlerResponse) {}
+export async function respond(response: IHandlerResponse) {
+  console.log(response);
+}

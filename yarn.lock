@@ -583,6 +583,14 @@ ssb-keys@^7.0.13:
     mkdirp "~0.5.0"
     private-box "^0.2.1"
 
+ssb-keys@^7.0.16:
+  version "7.0.16"
+  resolved "https://registry.yarnpkg.com/ssb-keys/-/ssb-keys-7.0.16.tgz#879e45872822f0985f8d8b25c9089d4154184086"
+  dependencies:
+    chloride "^2.2.8"
+    mkdirp "~0.5.0"
+    private-box "^0.2.1"
+
 ssb-typescript@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/ssb-typescript/-/ssb-typescript-1.3.0.tgz#035288d24dc428db0a7432173870f8d5bf90981c"

@@ -1,6 +1,9 @@
 import { IHandlerResponse, IMessage } from "..";
+import * as config from "../../config";
 import { createIndexes, createTable } from "../../db";
 import { IScuttleBot } from "../../types";
+
+const ssbKeys = require("ssb-keys");
 
 export async function setup() {
   await createTable(
@@ -40,7 +43,11 @@ function getItemRoot(message: IMessage, sbot: IScuttleBot) {
   return new Promise((resolve, reject) => {
     if (message.root) {
       sbot.get(message.root, (err, item: any) => {
-        console.log("Root item is", item);
+        if (typeof item.content === "string") {
+          console.log("Root item is", ssbKeys.unbox(item.content));
+        } else {
+          console.log("ERRA!");
+        }
       });
     }
   });

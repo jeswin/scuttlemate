@@ -20,38 +20,47 @@ const startTime = Date.now();
 let counterLogTime = startTime;
 
 async function main() {
+  console.log("KKK", ssbClient.keys)
   if (Object.keys(argv).length > 1) {
-    if (argv.timestamp) {
-      console.log(`Reset timestamp to ${argv.timestamp}.`);
-      await feed.updateLastProcessedTimestamp(parseInt(argv.timestamp, 10));
-    } else {
-      console.log(`Invalid command line option.`);
-    }
+    await admin();
   } else {
-    const exists = await db.databaseExists();
-    if (!exists) {
-      await settings.setup();
-      await setupModules();
-    }
-
-    lastProcessedTimestamp = await feed.getLastProcessedTimestamp();
-    previouslyWrittenTimestamp = lastProcessedTimestamp;
-    console.log("last_processed_timestamp:", lastProcessedTimestamp);
-
-    // Setup a timer to continuously update the timestamp
-    setInterval(updateTimestamp, 1000);
-
-    ssbClient((err: any, sbot: IScuttleBot) => {
-      pull(
-        sbot.createLogStream({
-          gte: lastProcessedTimestamp + 1,
-          live: true,
-          private: true
-        }),
-        processMessage(sbot)
-      );
-    });
+    await startServer();
   }
+}
+
+async function admin() {
+  if (argv.timestamp) {
+    console.log(`Reset timestamp to ${argv.timestamp}.`);
+    await feed.updateLastProcessedTimestamp(parseInt(argv.timestamp, 10));
+  } else {
+    console.log(`Invalid command line option.`);
+  }
+}
+
+async function startServer() {
+  const exists = await db.databaseExists();
+  if (!exists) {
+    await settings.setup();
+    await setupModules();
+  }
+
+  lastProcessedTimestamp = await feed.getLastProcessedTimestamp();
+  previouslyWrittenTimestamp = lastProcessedTimestamp;
+  console.log("last_processed_timestamp:", lastProcessedTimestamp);
+
+  // Setup a timer to continuously update the timestamp
+  setInterval(updateTimestamp, 1000);
+
+  ssbClient((err: any, sbot: IScuttleBot) => {
+    pull(
+      sbot.createLogStream({
+        gte: lastProcessedTimestamp + 1,
+        live: true,
+        private: true
+      }),
+      processMessage(sbot)
+    );
+  });
 }
 
 function processMessage(sbot: IScuttleBot) {

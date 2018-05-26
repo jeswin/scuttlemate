@@ -90,9 +90,9 @@ export async function handle(command: string, message: IMessage) {
       } else if (accountStatus.type === "ALIAS_EXISTS") {
         await renameUser(accountStatus.data, username, message.author);
         return {
-          message: `Your existing username ${
+          message: `Your username has been changed from ${
             accountStatus.data
-          } was renamed to ${username}.`
+          } to ${username}.`
         };
       } else if (accountStatus.type === "DOESNT_EXIST") {
         await createUser(username, message.author);
@@ -104,7 +104,7 @@ export async function handle(command: string, message: IMessage) {
         };
       } else if (accountStatus.type === "EXISTS") {
         return {
-          message: `The username ${username} already exists. Choose another username.`
+          message: `The username ${username} already exists. Choose something else.`
         };
       }
     }

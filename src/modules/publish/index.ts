@@ -33,7 +33,7 @@ export async function handle(
 ): Promise<IHandlerResponse | void> {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand === "publish") {
-    await publishThread(message, sbot);
+    await publish(message, sbot);
   } else if (lcaseCommand.startsWith("publish to ")) {
   }
 }
@@ -82,7 +82,8 @@ async function getHtmlForThread(message: IMessage, sbot: IScuttleBot) {
 }
 
 /*
-  Parse html with some simple regex.
+  Parse H1 and H2 tags with some simple regex.
+  We're trying to find the post's title
 */
 function getSlugFromHtml(html: string) {
   const regexen = Seq.of([/<h1.*?>(.+)<\/h1>/, /<h2.*?>(.+)<\/h2>/]).map(r =>
@@ -124,8 +125,9 @@ function stringToSlug(str: string) {
   We also verify that the user is the author of that post.
   Comments will be ON. Slug will be taken from the posts heading, if found.
 */
-async function publishThread(message: IMessage, sbot: IScuttleBot) {
+async function publish(message: IMessage, sbot: IScuttleBot) {
   const { post } = await getHtmlForThread(message, sbot);
+  const comments = "on";
   console.log("HTML IS! --> ", post);
 }
 
@@ -143,6 +145,13 @@ async function publishThread(message: IMessage, sbot: IScuttleBot) {
   Comments will be off.
 */
 async function publishWith() {}
+
+/*
+  The actual publishing happens here.
+*/
+async function publishImpl() {
+
+}
 
 /*
   Insert the html into a template.

@@ -2,11 +2,12 @@ import home = require("os-homedir");
 import path = require("path");
 const ssbKeys = require("ssb-keys");
 
+export const botName = "scuttlespace";
+
 export const botPublicKey =
   "@4BsPPzRK202TRUIoFcQL/x6m1pfuNcQDC0e33r2hQhM=.ed25519";
 
-export const botMention =
-  "[@scuttlespace](@4BsPPzRK202TRUIoFcQL/x6m1pfuNcQDC0e33r2hQhM=.ed25519)";
+export const botMention = `[@${botName}](${botPublicKey})`;
 
 let keys: any;
 export async function init(appName = "ssb") {

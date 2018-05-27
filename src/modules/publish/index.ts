@@ -1,3 +1,5 @@
+import marked = require("marked");
+import { Msg, PostContent } from "ssb-typescript";
 import { IHandlerResponse, IMessage } from "..";
 import * as config from "../../config";
 import { createIndexes, createTable } from "../../db";
@@ -39,14 +41,22 @@ export async function handle(
   The the root item of a thread.
   When you just say 'publish' it is the root that needs to get published.
 */
-function getItemRoot(message: IMessage, sbot: IScuttleBot) {
+function getItemRootText(
+  message: IMessage,
+  sbot: IScuttleBot
+): Promise<string> {
   return new Promise((resolve, reject) => {
     if (message.root) {
-      sbot.get(message.root, (err, item: any) => {
-        if (typeof item.content === "string") {
-          console.log("Root item is", ssbKeys.unbox(item.content));
+      sbot.get(message.root, (err, post: any) => {
+        if (!err) {
+          if (typeof post.content === "string") {
+            const content = ssbKeys.unbox(post.content, config.getKeys());
+            resolve(content.text);
+          } else {
+            resolve(post.content.text);
+          }
         } else {
-          console.log("ERRA!");
+          reject(err);
         }
       });
     }
@@ -54,12 +64,29 @@ function getItemRoot(message: IMessage, sbot: IScuttleBot) {
 }
 
 /*
+  Gets the html of the thread, by loading the root item.
+*/
+async function getHtmlForThread(message: IMessage, sbot: IScuttleBot) {
+  const text = await getItemRootText(message, sbot);
+
+  // The root could be a private message.
+  // In which case strip everything before the public key.
+  const markdown = text.trimLeft().startsWith(config.botMention)
+    ? text.substring(config.botMention.length).trim()
+    : text.trim();
+
+  const postHtml = marked(markdown);
+  return { post: { html: postHtml } };
+}
+
+/*
   A user just says "publish" on a thread. 
   The first item in the thread is taken as the post.
   We also verify that the user is the author of that post.
-  */
+*/
 async function publishThread(message: IMessage, sbot: IScuttleBot) {
-  const root = await getItemRoot(message, sbot);
+  const { post } = await getHtmlForThread(message, sbot);
+  console.log("HTML IS! --> ", post.html);
 }
 
 /*
@@ -85,3 +112,7 @@ async function getPostTitle() {}
 /*
   Get the 
 */
+
+function insertIntoTemplate(html: string) {
+  return "";
+}

@@ -1,5 +1,5 @@
 import { Msg, PostContent } from "ssb-typescript";
-import { botPublicKey } from "./config";
+import * as config from "./config";
 import * as db from "./db";
 import * as feed from "./feed";
 import { log } from "./logger";
@@ -20,7 +20,7 @@ const startTime = Date.now();
 let counterLogTime = startTime;
 
 async function main() {
-  console.log("KKK", ssbClient.keys)
+  await config.init();
   if (Object.keys(argv).length > 1) {
     await admin();
   } else {
@@ -117,7 +117,7 @@ function postIsCommand(item: any): item is Msg<PostContent> {
     item.value.content.type === "post" &&
     item.value.content.text &&
     Array.isArray(item.value.content.mentions) &&
-    item.value.content.mentions.some((x: any) => x.link === botPublicKey)
+    item.value.content.mentions.some((x: any) => x.link === config.botPublicKey)
   );
 }
 

@@ -7,8 +7,9 @@ export async function setup() {
     "users",
     `CREATE TABLE users (
         id	INTEGER PRIMARY KEY AUTOINCREMENT,
-        pubkey	TEXT,
-        username	TEXT
+        pubkey TEXT  NOT NULL,
+        username TEXT NOT NULL,
+        active INTEGER NOT NULL
       )`
   );
 
@@ -54,7 +55,7 @@ async function checkUserExistence(
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
   const stmt =
-    "INSERT INTO users (username, pubkey) VALUES ($username, $pubkey)";
+    "INSERT INTO users (username, pubkey, active) VALUES ($username, $pubkey, 1)";
   db.prepare(stmt).run({ username, pubkey });
 
   // Create home dir.
@@ -67,7 +68,8 @@ async function renameUser(
   pubkey: string
 ) {
   const db = await getDb();
-  const stmt = "UPDATE users SET username=$username WHERE pubkey=$pubkey";
+  const stmt =
+    "UPDATE users SET username=$username, active=1 WHERE pubkey=$pubkey";
   db.prepare(stmt).run({ username, pubkey });
 
   // Rename home dir.

@@ -1,3 +1,4 @@
+import { Seq } from "lazily";
 import marked = require("marked");
 import { Msg, PostContent } from "ssb-typescript";
 import { IHandlerResponse, IMessage } from "..";
@@ -11,9 +12,9 @@ export async function setup() {
   await createTable(
     "publish_posts",
     `CREATE TABLE publish_posts (
-      id	INTEGER PRIMARY KEY AUTOINCREMENT,
-      ssb_id	TEXT,
-      tags	TEXT
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ssb_id TEXT NOT NULL,
+      tags TEXT  NOT NULL
     )`
   );
 
@@ -76,43 +77,81 @@ async function getHtmlForThread(message: IMessage, sbot: IScuttleBot) {
     : text.trim();
 
   const postHtml = marked(markdown);
-  return { post: { html: postHtml } };
+  const slug = getSlugFromHtml(postHtml);
+  return { post: { html: postHtml, slug } };
+}
+
+/*
+  Parse html with some simple regex.
+*/
+function getSlugFromHtml(html: string) {
+  const regexen = Seq.of([/<h1.*?>(.+)<\/h1>/, /<h2.*?>(.+)<\/h2>/]).map(r =>
+    r.exec(html)
+  );
+
+  const match = regexen.first(x => x !== null);
+  if (match !== null && match !== undefined) {
+    return stringToSlug(match[1]);
+  }
+}
+
+/*
+  Create a slug from post title
+  https://gist.github.com/codeguy/6684588
+*/
+function stringToSlug(str: string) {
+  str = str.replace(/^\s+|\s+$/g, ""); // trim
+  str = str.toLowerCase();
+
+  // remove accents, swap ñ for n, etc
+  const from = "àáäâèéëêìíïîòóöôùúüûñç·/_,:;";
+  const to = "aaaaeeeeiiiioooouuuunc------";
+  for (let i = 0, l = from.length; i < l; i++) {
+    str = str.replace(new RegExp(from.charAt(i), "g"), to.charAt(i));
+  }
+
+  str = str
+    .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
+    .replace(/\s+/g, "-") // collapse whitespace and replace by -
+    .replace(/-+/g, "-"); // collapse dashes
+
+  return str;
 }
 
 /*
   A user just says "publish" on a thread. 
   The first item in the thread is taken as the post.
   We also verify that the user is the author of that post.
+  Comments will be ON. Slug will be taken from the posts heading, if found.
 */
 async function publishThread(message: IMessage, sbot: IScuttleBot) {
   const { post } = await getHtmlForThread(message, sbot);
-  console.log("HTML IS! --> ", post.html);
+  console.log("HTML IS! --> ", post);
 }
 
 /*
-    A user says "publish to some-url" on a thread.
-    The first item in the thread is taken as the post.
-    The final url will be /username/pub/some-url
-*/
-async function publishToUrl() {}
+  publish with <key> <value>, <key2> <value2>, ...
 
-/*
-  A user says "publish with title some-title" on a thread.
+  Possible keys are:
+    url <some_url_slug>
+    title <some title>
+    comments on | off
+  
+  eg: "publish with url some-url, comments off" .
   The first item in the thread is taken as the post.
   The final url will be /username/pub/some-url
+  Comments will be off.
 */
-async function publishWithTitle() {}
+async function publishWith() {}
 
 /*
-  Get the title of the post from the first heading.
-  If we don't find a heading, use "untitled".
+  Insert the html into a template.
 */
-async function getPostTitle() {}
-
-/*
-  Get the 
-*/
-
 function insertIntoTemplate(html: string) {
   return "";
 }
+
+/*
+  Write the file out to the user's pub directory
+*/
+async function writeToDisk(slug: string, content: string, username: string) {}

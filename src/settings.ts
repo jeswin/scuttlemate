@@ -5,8 +5,8 @@ export async function setup() {
     "settings",
     `CREATE TABLE settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      key	TEXT,
-      value	TEXT
+      key	TEXT NOT NULL,
+      value	TEXT NOT NULL
     )`
   );
 

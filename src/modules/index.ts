@@ -8,6 +8,7 @@ export interface IMessage {
   author: string;
   branch?: string | string[];
   channel?: string;
+  key: string;
   mentions?: string[];
   root?: string;
   text: string;
@@ -24,6 +25,7 @@ export function toMessage(item: Msg<PostContent>): IMessage {
     author: item.value.author,
     branch: item.value.content.branch,
     channel: item.value.content.channel,
+    key: item.key,
     mentions: item.value.content.mentions,
     root: item.value.content.root,
     text: item.value.content.text,

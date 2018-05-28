@@ -3,17 +3,54 @@ import marked = require("marked");
 import { Msg, PostContent } from "ssb-typescript";
 import { IHandlerResponse, IMessage } from "..";
 import * as config from "../../config";
-import { createIndexes, createTable } from "../../db";
+import { createIndexes, createTable, getDb } from "../../db";
 import { IScuttleBot } from "../../types";
+import * as home from "../home";
 
 const ssbKeys = require("ssb-keys");
+
+/*
+  Supported commands. [] denotes optional.
+  
+  Publishing
+  ----------
+  publish [<ssb_post_id>]
+  publish [<ssb_post_id>] title Hello World
+  publish [<ssb_post_id>] comments on|off
+  publish [<ssb_post_id>] url hello-world
+  
+  OR combinations thereof
+  publish [<ssb_post_id>] with title Hello World, comments off
+  
+  Index
+  -----
+  publish index all posts (default)
+  publish index selected posts
+  publish index posts <ssb_post_id1> [<ssb_post_id2> <ssb_post_id3> ...]
+  publish index length 10
+  publish index add <ssb_post_id>
+  publish index del <ssb_post_id>
+  publish index ordered by date
+  publish index reset (goes back to default)
+  
+  OR combinations thereof
+  publish index ordered by date, length 10
+
+  Deleting
+  --------
+  publish remove <ssb_post_id>
+
+  Hiding
+  ------
+  publish hide <ssb_post_id>
+*/
 
 export async function setup() {
   await createTable(
     "publish_posts",
     `CREATE TABLE publish_posts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ssb_id TEXT NOT NULL,
+      ssb_post_id TEXT NOT NULL,
       markdown TEXT NOT NULL,
       html TEXT NOT NULL,
       tags TEXT  NOT NULL,
@@ -36,44 +73,62 @@ export async function handle(
   message: IMessage,
   sbot: IScuttleBot
 ): Promise<IHandlerResponse | void> {
-  const lcaseCommand = command.toLowerCase();
-  if (lcaseCommand === "publish") {
-    await publish(message, sbot);
-  } else if (lcaseCommand.startsWith("publish to ")) {
+  const parts = command.split(" ").filter(x => x.trim() !== "");
+  if (parts[0].toLowerCase() === "command") {
+    if (parts.length === 0) {
+      if (message.root) {
+        const post = await createPost(message.root, sbot);
+        const publishResult = await publishImpl(
+          { ...post, ssbPostId: message.root, allowComments: true },
+          message,
+          sbot
+        );
+        return {
+          message: `The article was published at https://www.scuttle.space/${}/` //TODO
+        }
+      } else {
+        return {
+          message: `To publish an article, say '@scuttlespace publish' as a reply to the article you want published.`
+        };
+      }
+    } else {
+      if (isSSBMessageId(parts[1])) {
+      } else {
+      }
+    }
   }
+}
+
+function isSSBMessageId(part: string) {
+  return true;
 }
 
 /*
   The the root item of a thread.
   When you just say 'publish' it is the root that needs to get published.
 */
-function getItemRootText(
-  message: IMessage,
-  sbot: IScuttleBot
-): Promise<string> {
+function getItemRootText(key: string, sbot: IScuttleBot): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (message.root) {
-      sbot.get(message.root, (err, post: any) => {
-        if (!err) {
-          if (typeof post.content === "string") {
-            const content = ssbKeys.unbox(post.content, config.getKeys());
-            resolve(content.text);
-          } else {
-            resolve(post.content.text);
-          }
+    sbot.get(key, (err, post: any) => {
+      if (!err) {
+        if (typeof post.content === "string") {
+          const content = ssbKeys.unbox(post.content, config.getKeys());
+          resolve(content.text);
         } else {
-          reject(err);
+          resolve(post.content.text);
         }
-      });
-    }
+      } else {
+        reject(err);
+      }
+    });
   });
 }
 
 /*
   Gets the html of the thread, by loading the root item.
 */
-async function createPost(message: IMessage, sbot: IScuttleBot) {
-  const text = await getItemRootText(message, sbot);
+async function createPost(key: string, sbot: IScuttleBot) {
+  const text = await getItemRootText(key, sbot);
 
   // The root could be a private message.
   // In which case strip everything before the public key.
@@ -88,7 +143,8 @@ async function createPost(message: IMessage, sbot: IScuttleBot) {
     ? maybeTitle
     : markdown.replace(/[^\w ]+/gi, "").substring(0, 50) + "...";
   const slug = stringToSlug(title);
-  return { html: postHtml, title, slug };
+  const tags: string[] = [];
+  return { html: postHtml, markdown, title, slug, tags };
 }
 
 /*
@@ -135,31 +191,23 @@ function stringToSlug(str: string) {
   We also verify that the user is the author of that post.
   Comments will be ON. Slug will be taken from the posts heading, if found.
 */
-async function publish(message: IMessage, sbot: IScuttleBot) {
-  const post = await createPost(message, sbot);
-  return await publishImpl({ ...post, allowComments: true }, message, sbot);
-}
-
-/*
-  publish with <key> <value>, <key2> <value2>, ...
-
-  Possible keys are:
-    url <some_url_slug>
-    title <some title>
-    comments on | off
-  
-  eg: "publish with url some-url, comments off" .
-  The first item in the thread is taken as the post.
-  The final url will be /username/pub/some-url
-  Comments will be off.
-*/
-async function publishWith() {}
+async function publish(
+  message: IMessage,
+  sbot: IScuttleBot
+): Promise<IHandlerResponse | void> {}
 
 interface IPublishable {
-  html: string;
-  slug: string;
   allowComments: boolean;
+  html: string;
+  markdown: string;
+  slug: string;
+  ssbPostId: string;
+  tags: string[];
   title: string;
+}
+
+interface IPublishResult {
+  url: string;
 }
 
 /*
@@ -169,34 +217,46 @@ async function publishImpl(
   post: IPublishable,
   message: IMessage,
   sbot: IScuttleBot
-) {
+): Promise<IPublishResult> {
   // Check if the slug exists.
   const insert = `INSERT 
     INTO publish_posts 
-    (ssb_id, markdown, html, tags, allowComments, title, slug) 
+    (ssb_post_id, markdown, html, tags, allow_comments, title, slug) 
     VALUES ($ssbId, $markdown, $html, $tags, $allowComments, $title, $slow)`;
 
-  const values = {
-    ssbId,
-    markdown,
-    html,
-    tags,
-    allowComments,
-    title,
-    slug
-  };
+  const db = await getDb();
+  const stmt = db.prepare(insert);
+  stmt.run(post);
 
-  return;
+  await writeToDisk(post, message, sbot);
+  await regenerateHomePageSnippet(post, message, sbot);
+
+  return { url: "https://www.example.com/todo" };
 }
 
 /*
-  Insert the html into a template.
+Insert the html into a template.
 */
 function insertIntoTemplate(html: string) {
   return "";
 }
 
 /*
-  Write the file out to the user's pub directory
+Write the file out to the user's pub directory
 */
-async function writeToDisk(slug: string, content: string, username: string) {}
+async function writeToDisk(
+  spost: IPublishable,
+  message: IMessage,
+  sbot: IScuttleBot
+) {}
+
+/*
+Write the file out to the user's pub directory
+*/
+async function regenerateHomePageSnippet(
+  spost: IPublishable,
+  message: IMessage,
+  sbot: IScuttleBot
+) {
+  await home.regenerate();
+}

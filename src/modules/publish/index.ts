@@ -14,7 +14,12 @@ export async function setup() {
     `CREATE TABLE publish_posts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       ssb_id TEXT NOT NULL,
-      tags TEXT  NOT NULL
+      markdown TEXT NOT NULL,
+      html TEXT NOT NULL,
+      tags TEXT  NOT NULL,
+      allow_comments INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      slug TEXT NOT NULL
     )`
   );
 
@@ -67,7 +72,7 @@ function getItemRootText(
 /*
   Gets the html of the thread, by loading the root item.
 */
-async function getHtmlForThread(message: IMessage, sbot: IScuttleBot) {
+async function createPost(message: IMessage, sbot: IScuttleBot) {
   const text = await getItemRootText(message, sbot);
 
   // The root could be a private message.
@@ -76,23 +81,28 @@ async function getHtmlForThread(message: IMessage, sbot: IScuttleBot) {
     ? text.substring(config.botMention.length).trim()
     : text.trim();
 
+  const justText = markdown.replace(/[^\w ]+/gi, "");
   const postHtml = marked(markdown);
-  const slug = getSlugFromHtml(postHtml);
-  return { post: { html: postHtml, slug } };
+  const maybeTitle = getTitleFromHtml(postHtml);
+  const title = maybeTitle
+    ? maybeTitle
+    : markdown.replace(/[^\w ]+/gi, "").substring(0, 50) + "...";
+  const slug = stringToSlug(title);
+  return { html: postHtml, title, slug };
 }
 
 /*
   Parse H1 and H2 tags with some simple regex.
   We're trying to find the post's title
 */
-function getSlugFromHtml(html: string) {
+function getTitleFromHtml(html: string) {
   const regexen = Seq.of([/<h1.*?>(.+)<\/h1>/, /<h2.*?>(.+)<\/h2>/]).map(r =>
     r.exec(html)
   );
 
   const match = regexen.first(x => x !== null);
   if (match !== null && match !== undefined) {
-    return stringToSlug(match[1]);
+    return match[1];
   }
 }
 
@@ -126,9 +136,8 @@ function stringToSlug(str: string) {
   Comments will be ON. Slug will be taken from the posts heading, if found.
 */
 async function publish(message: IMessage, sbot: IScuttleBot) {
-  const { post } = await getHtmlForThread(message, sbot);
-  const comments = "on";
-  console.log("HTML IS! --> ", post);
+  const post = await createPost(message, sbot);
+  return await publishImpl({ ...post, allowComments: true }, message, sbot);
 }
 
 /*
@@ -146,11 +155,38 @@ async function publish(message: IMessage, sbot: IScuttleBot) {
 */
 async function publishWith() {}
 
+interface IPublishable {
+  html: string;
+  slug: string;
+  allowComments: boolean;
+  title: string;
+}
+
 /*
   The actual publishing happens here.
 */
-async function publishImpl() {
+async function publishImpl(
+  post: IPublishable,
+  message: IMessage,
+  sbot: IScuttleBot
+) {
+  // Check if the slug exists.
+  const insert = `INSERT 
+    INTO publish_posts 
+    (ssb_id, markdown, html, tags, allowComments, title, slug) 
+    VALUES ($ssbId, $markdown, $html, $tags, $allowComments, $title, $slow)`;
 
+  const values = {
+    ssbId,
+    markdown,
+    html,
+    tags,
+    allowComments,
+    title,
+    slug
+  };
+
+  return;
 }
 
 /*

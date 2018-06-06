@@ -179,6 +179,10 @@ he@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/he/-/he-1.1.1.tgz#93410fd21b009735151f8868c2f271f3427e23fd"
 
+humanist@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/humanist/-/humanist-0.0.3.tgz#37d16a4979747ee79ed750b8c398ded7b176c1b3"
+
 increment-buffer@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/increment-buffer/-/increment-buffer-1.0.1.tgz#65076d75189d808b39ad13ab5b958e05216f9e0d"

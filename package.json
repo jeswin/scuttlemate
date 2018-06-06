@@ -17,6 +17,7 @@
     "@types/os-homedir": "^1.0.0",
     "better-sqlite3": "^4.1.0",
     "fs-extra": "^6.0.1",
+    "humanist": "^0.0.3",
     "lazily": "^0.0.22",
     "marked": "^0.4.0",
     "minimist": "^1.2.0",

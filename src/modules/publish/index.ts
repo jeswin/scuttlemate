@@ -45,6 +45,8 @@ const ssbKeys = require("ssb-keys");
   publish hide <ssb_post_id>
 */
 
+const publishSchema = [["title", Infinity], ["comments", 1], ["url", 1]];
+
 export async function setup() {
   await createTable(
     "publish_posts",
@@ -68,6 +70,16 @@ function isValidUsername(username: string) {
   return regex.test(username);
 }
 
+const schemas = [];
+
+function argIsPostId(arg: string) {
+  return true;
+}
+
+function publishRootPost() {
+  throw new Error("Not implemented.");
+}
+
 export async function handle(
   command: string,
   message: IMessage,
@@ -84,8 +96,8 @@ export async function handle(
           sbot
         );
         return {
-          message: `The article was published at https://www.scuttle.space/${}/` //TODO
-        }
+          message: `The article was published at https://www.scuttle.space/${lala}/`
+        };
       } else {
         return {
           message: `To publish an article, say '@scuttlespace publish' as a reply to the article you want published.`

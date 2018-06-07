@@ -4,6 +4,7 @@ import marked = require("marked");
 import { IHandlerResponse, IMessage } from "..";
 import * as config from "../../config";
 import { getDb } from "../../db";
+import { getPathForDocument } from "../../services/cms";
 import { IScuttleBot } from "../../types";
 import * as home from "../home";
 
@@ -43,11 +44,14 @@ export async function publishWithoutOptions(
       sbot
     );
     return {
-      message: `The article was published at https://www.scuttle.space/${lala}/`
+      message: `The article was published at https://www.scuttle.space/${getPathForDocument(
+        message.author,
+        post.slug
+      )}/`
     };
   } else {
     return {
-      message: `To publish an article, say '@scuttlespace publish' as a reply to the article you want published.`
+      message: `To publish an article, say '@scuttlespace publish' as a reply to the article you want to publish.`
     };
   }
 }

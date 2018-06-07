@@ -9,6 +9,7 @@ export async function setup() {
         id	INTEGER PRIMARY KEY AUTOINCREMENT,
         pubkey TEXT  NOT NULL,
         username TEXT NOT NULL,
+        primary INTEGER NOT NULL,
         active INTEGER NOT NULL
       )`
   );
@@ -54,8 +55,12 @@ async function checkUserExistence(
 
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
+
+  const removePrimaryStmt = "UPDATE users SET primary=0 WHERE pubkey=$pubkey";
+  db.prepare(removePrimaryStmt).run({ pubkey });
+
   const stmt =
-    "INSERT INTO users (username, pubkey, active) VALUES ($username, $pubkey, 1)";
+    "INSERT INTO users (username, pubkey, primary, active) VALUES ($username, $pubkey, 1, 1)";
   db.prepare(stmt).run({ username, pubkey });
 
   // Create home dir.
@@ -78,7 +83,7 @@ async function renameUser(
 
 export async function handle(command: string, message: IMessage) {
   const lcaseCommand = command.toLowerCase();
-  if (lcaseCommand.startsWith("username ")) {
+  if (lcaseCommand.startsWith("user ")) {
     const username = lcaseCommand.substr(9);
     if (isValidUsername(username)) {
       const accountStatus = await checkUserExistence(username, message.author);

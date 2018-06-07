@@ -4,8 +4,21 @@ const ssbKeys = require("ssb-keys");
 
 export const botName = "scuttlespace";
 
-export const botPublicKey =
-  "@4BsPPzRK202TRUIoFcQL/x6m1pfuNcQDC0e33r2hQhM=.ed25519";
+// "@4BsPPzRK202TRUIoFcQL/x6m1pfuNcQDC0e33r2hQhM=.ed25519";
+if (!process.env.SCUTTLESPACE_BOT_PKEY) {
+  throw new Error(
+    "$SCUTTLESPACE_BOT_PKEY environment variable needs to be set."
+  );
+}
+export const botPublicKey = process.env.SCUTTLESPACE_BOT_PKEY;
+
+// scuttle.space
+if (!process.env.SCUTTLESPACE_DOMAIN) {
+  throw new Error(
+    "$SCUTTLESPACE_BOT_PKEY environment variable needs to be set."
+  );
+}
+export const domain = process.env.SCUTTLESPACE_DOMAIN;
 
 export const botMention = `[@${botName}](${botPublicKey})`;
 

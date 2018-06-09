@@ -3,5 +3,5 @@
   
   Hiding
   ------
-  publish hide <ssb_post_id>
+  publish hide <url>
 */

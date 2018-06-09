@@ -2,6 +2,18 @@ import * as fs from "fs-extra";
 import { IMessage } from "..";
 import { createIndexes, createTable, getDb } from "../../db";
 
+/*
+  Supported commands.
+  
+  A given pubkey can have multiple usernames associated with it, one of which will be in active state.
+
+  Account Management
+  ------------------
+  user jeswin  # Adds a username to the current pubkey, or makes it active if it already exists.
+  user jeswin disable # Disables a username
+  user jeswin remove # Deletes a previously disabled username   
+*/
+
 export async function setup() {
   await createTable(
     "users",
@@ -16,6 +28,27 @@ export async function setup() {
 
   await createIndexes("users", ["pubkey"]);
   await createIndexes("users", ["username"]);
+
+  await createTable(
+    "permissions",
+    `CREATE TABLE users (
+        id	INTEGER PRIMARY KEY AUTOINCREMENT,
+        object_type TEXT NOT NULL,
+        object_id NUMBER NOT NULL,
+        owner_pubkey TEXT NOT NULL,
+        assignee_pubkey TEXT NOT NULL,
+        permissions TEXT NOT NULL
+      )`
+  );
+
+  await createIndexes("users", ["object_type", "object_id"]);
+  await createIndexes("users", ["object_type", "object_id", "owner_pubkey"]);
+  await createIndexes("users", [
+    "object_type",
+    "object_id",
+    "owner_pubkey",
+    "assignee_pubkey"
+  ]);
 }
 
 function isValidUsername(username: string) {
@@ -24,12 +57,11 @@ function isValidUsername(username: string) {
 }
 
 type UserExistenceQueryResult =
-  | { type: "EXISTS" }
-  | { type: "DOESNT_EXIST" }
-  | { type: "ALIAS_EXISTS"; data: string }
-  | { type: "ALREADY_CREATED" };
+  | { type: "TAKEN" }
+  | { type: "AVAILABLE" }
+  | { type: "ALIAS"; active: boolean; primary: boolean };
 
-async function checkUserExistence(
+async function checkAccountStatus(
   username: string,
   pubkey: string
 ): Promise<UserExistenceQueryResult> {
@@ -39,18 +71,20 @@ async function checkUserExistence(
     "SELECT * FROM users WHERE username=$username OR pubkey=$pubkey";
   const results = db.prepare(query).all({ username, pubkey });
 
-  return results.length
-    ? results.length === 1 &&
-      results[0].pubkey === pubkey &&
-      results[0].username === username
-      ? { type: "ALREADY_CREATED" }
-      : results.some(r => r.username === username)
-        ? { type: "EXISTS" }
-        : {
-            data: results.find(r => r.pubkey === pubkey).username,
-            type: "ALIAS_EXISTS"
-          }
-    : { type: "DOESNT_EXIST" };
+  if (results.length) {
+    const alias = results.find(
+      r => r.pubkey === pubkey && r.username === username
+    );
+    if (alias) {
+      return { type: "ALIAS", active: alias.active, primary: alias.primary };
+    } else if (results.every(r => r.username !== username)) {
+      return { type: "AVAILABLE" };
+    } else {
+      return { type: "TAKEN" };
+    }
+  } else {
+    return { type: "AVAILABLE" };
+  }
 }
 
 async function createUser(username: string, pubkey: string) {
@@ -67,11 +101,7 @@ async function createUser(username: string, pubkey: string) {
   fs.ensureDirSync(`data/${username}`);
 }
 
-async function renameUser(
-  oldUsername: string,
-  username: string,
-  pubkey: string
-) {
+async function switchActiveAccount(username: string, pubkey: string) {
   const db = await getDb();
   const stmt =
     "UPDATE users SET username=$username, active=1 WHERE pubkey=$pubkey";
@@ -81,27 +111,20 @@ async function renameUser(
   fs.renameSync(`data/${oldUsername}`, `data/${username}`);
 }
 
+async function removeUser(username: string, pubkey: string) {}
+
 export async function handle(command: string, message: IMessage) {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand.startsWith("user ")) {
     const username = lcaseCommand.substr(9);
     if (isValidUsername(username)) {
-      const accountStatus = await checkUserExistence(username, message.author);
-      if (accountStatus.type === "ALREADY_CREATED") {
+      const accountStatus = await checkAccountStatus(username, message.author);
+      if (accountStatus.type === "ALIAS") {
+        await switchActiveAccount(username, message.author);
         return {
-          message: [
-            `Your profile already exists. Go to https://scuttle.space/${username}.`,
-            `To learn how to use scuttlespace, see https://scuttle.space/help.`
-          ].join(`\r\n`)
+          message: `Switched to ${username}.`
         };
-      } else if (accountStatus.type === "ALIAS_EXISTS") {
-        await renameUser(accountStatus.data, username, message.author);
-        return {
-          message: `Your username has been changed from ${
-            accountStatus.data
-          } to ${username}.`
-        };
-      } else if (accountStatus.type === "DOESNT_EXIST") {
+      } else if (accountStatus.type === "AVAILABLE") {
         await createUser(username, message.author);
         return {
           message: [
@@ -109,7 +132,7 @@ export async function handle(command: string, message: IMessage) {
             `To learn how to use scuttlespace, see https://scuttle.space/help.`
           ].join(`\r\n`)
         };
-      } else if (accountStatus.type === "EXISTS") {
+      } else if (accountStatus.type === "TAKEN") {
         return {
           message: `The username ${username} already exists. Choose something else.`
         };

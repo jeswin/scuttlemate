@@ -13,15 +13,18 @@ const ssbKeys = require("ssb-keys");
 /*
   Supported commands. [] denotes optional.
   
+  If the username is not provided the currently active username is used.
+  If the ssb_post_id is not provided, the message root is published.
+
   Publishing
   ----------
-  publish [<ssb_post_id>]
-  publish [<ssb_post_id>] title Hello World
-  publish [<ssb_post_id>] comments on|off
-  publish [<ssb_post_id>] url hello-world
+  publish [as <username>] [<ssb_post_id>]
+  publish [as <username>] [<ssb_post_id>] title Hello World
+  publish [as <username>] [<ssb_post_id>] comments on|off
+  publish [as <username>] [<ssb_post_id>] url hello-world
   
   OR combinations thereof
-  publish [<ssb_post_id>] title Hello World. comments off  
+  publish [as <username>] [<ssb_post_id>] title Hello World. comments off  
 */
 
 const publishPostSchema: OptionEntry[] = [

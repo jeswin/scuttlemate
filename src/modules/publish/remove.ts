@@ -3,5 +3,5 @@
   
   Deleting
   --------
-  publish remove <ssb_post_id>
+  publish remove <url>
 */

@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
 import { IMessage } from "..";
-import { createIndexes, createTable, getDb } from "../../db";
+import { getDb } from "../../db";
 
 /*
   Supported commands.
@@ -9,47 +9,10 @@ import { createIndexes, createTable, getDb } from "../../db";
 
   Account Management
   ------------------
-  user jeswin  # Adds a username to the current pubkey, or makes it active if it already exists.
+  user jeswin # Adds a username to the current pubkey, or makes it active if it already exists.
   user jeswin disable # Disables a username
   user jeswin remove # Deletes a previously disabled username   
 */
-
-export async function setup() {
-  await createTable(
-    "users",
-    `CREATE TABLE users (
-        id	INTEGER PRIMARY KEY AUTOINCREMENT,
-        pubkey TEXT  NOT NULL,
-        username TEXT NOT NULL,
-        primary INTEGER NOT NULL,
-        active INTEGER NOT NULL
-      )`
-  );
-
-  await createIndexes("users", ["pubkey"]);
-  await createIndexes("users", ["username"]);
-
-  await createTable(
-    "permissions",
-    `CREATE TABLE users (
-        id	INTEGER PRIMARY KEY AUTOINCREMENT,
-        object_type TEXT NOT NULL,
-        object_id NUMBER NOT NULL,
-        owner_pubkey TEXT NOT NULL,
-        assignee_pubkey TEXT NOT NULL,
-        permissions TEXT NOT NULL
-      )`
-  );
-
-  await createIndexes("users", ["object_type", "object_id"]);
-  await createIndexes("users", ["object_type", "object_id", "owner_pubkey"]);
-  await createIndexes("users", [
-    "object_type",
-    "object_id",
-    "owner_pubkey",
-    "assignee_pubkey"
-  ]);
-}
 
 function isValidUsername(username: string) {
   const regex = /^[a-z][a-z0-9_]+$/;

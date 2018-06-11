@@ -1,3 +1,5 @@
+import { IMessage } from "..";
+
 /*
   Supported commands.
   
@@ -8,3 +10,7 @@
   group scuttlers remove pubkey2
   group scuttlers admin pubkey1
 */
+
+export async function handle(command: string, message: IMessage) {
+  
+}

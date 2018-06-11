@@ -77,29 +77,27 @@ async function switchActiveAccount(username: string, pubkey: string) {
 async function removeUser(username: string, pubkey: string) {}
 
 export async function handle(command: string, message: IMessage) {
-  const lcaseCommand = command.toLowerCase();
-  if (lcaseCommand.startsWith("user ")) {
-    const username = lcaseCommand.substr(9);
-    if (isValidUsername(username)) {
-      const accountStatus = await checkAccountStatus(username, message.author);
-      if (accountStatus.type === "ALIAS") {
-        await switchActiveAccount(username, message.author);
-        return {
-          message: `Switched to ${username}.`
-        };
-      } else if (accountStatus.type === "AVAILABLE") {
-        await createUser(username, message.author);
-        return {
-          message: [
-            `Your profile is now accessible at https://scuttle.space/${username}.`,
-            `To learn how to use scuttlespace, see https://scuttle.space/help.`
-          ].join(`\r\n`)
-        };
-      } else if (accountStatus.type === "TAKEN") {
-        return {
-          message: `The username ${username} already exists. Choose something else.`
-        };
-      }
+  const lcaseCommand = command.toLowerCase();  
+  const username = lcaseCommand.substr(9);
+  if (isValidUsername(username)) {
+    const accountStatus = await checkAccountStatus(username, message.author);
+    if (accountStatus.type === "ALIAS") {
+      await switchActiveAccount(username, message.author);
+      return {
+        message: `Switched to ${username}.`
+      };
+    } else if (accountStatus.type === "AVAILABLE") {
+      await createUser(username, message.author);
+      return {
+        message: [
+          `Your profile is now accessible at https://scuttle.space/${username}.`,
+          `To learn how to use scuttlespace, see https://scuttle.space/help.`
+        ].join(`\r\n`)
+      };
+    } else if (accountStatus.type === "TAKEN") {
+      return {
+        message: `The username ${username} already exists. Choose something else.`
+      };
     }
   }
 }

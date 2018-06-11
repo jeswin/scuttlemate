@@ -1,4 +1,7 @@
+import { IMessage } from "..";
 import { createIndexes, createTable, getDb } from "../../db";
+import * as group from "./group";
+import * as user from "./user";
 
 export async function setup() {
   await createTable(
@@ -25,6 +28,15 @@ export async function setup() {
       )`
   );
 
-  await createIndexes("groups", ["pubkey"]);  
+  await createIndexes("groups", ["pubkey"]);
   await createIndexes("groups", ["name"]);
+}
+
+export async function handle(command: string, message: IMessage) {
+  const lcaseCommand = command.toLowerCase();
+  if (lcaseCommand.startsWith("user ")) {
+    return await user.handle(command, message);
+  } else if (lcaseCommand.startsWith("group ")) {
+    return await group.handle(command, message);
+  }
 }

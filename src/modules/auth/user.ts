@@ -76,7 +76,7 @@ async function switchActiveAccount(username: string, pubkey: string) {
 
 async function removeUser(username: string, pubkey: string) {}
 
-export async function handle(command: string, message: IMessage) {
+export default async function handle(command: string, message: IMessage) {
   const lcaseCommand = command.toLowerCase();  
   const username = lcaseCommand.substr(9);
   if (isValidUsername(username)) {

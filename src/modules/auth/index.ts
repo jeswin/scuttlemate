@@ -1,7 +1,7 @@
 import { IMessage } from "..";
 import { createIndexes, createTable, getDb } from "../../db";
-import * as group from "./group";
-import * as user from "./user";
+import group from "./group";
+import user from "./user";
 
 export async function setup() {
   await createTable(

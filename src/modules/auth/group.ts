@@ -11,6 +11,4 @@ import { IMessage } from "..";
   group scuttlers admin pubkey1
 */
 
-export async function handle(command: string, message: IMessage) {
-  
-}
+export default async function handle(command: string, message: IMessage) {}

@@ -73,7 +73,7 @@ export async function publishPost(
     sbot
   );
   return {
-    message: `The article was published at https://www.scuttle.space/${lala}/`
+    message: `TODO` // `The article was published at https://www.scuttle.space/${"TODO"}/`
   };
 }
 

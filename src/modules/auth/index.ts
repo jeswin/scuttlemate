@@ -35,8 +35,8 @@ export async function setup() {
 export async function handle(command: string, message: IMessage) {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand.startsWith("user ")) {
-    return await user.handle(command, message);
+    return await user(command, message);
   } else if (lcaseCommand.startsWith("group ")) {
-    return await group.handle(command, message);
+    return await group(command, message);
   }
 }

@@ -1,7 +1,7 @@
 import { Msg, PostContent } from "ssb-typescript";
 import { botPublicKey } from "../config";
 import { IScuttleBot } from "../types";
-import * as basic from "./basic";
+import * as auth from "./auth";
 import * as publish from "./publish";
 
 export interface IMessage {
@@ -39,7 +39,7 @@ interface IScuttleSpaceModule {
   setup(): Promise<void>;
 }
 
-const modules: IScuttleSpaceModule[] = [basic, publish];
+const modules: IScuttleSpaceModule[] = [auth, publish];
 
 export async function setup() {
   for (const mod of modules) {

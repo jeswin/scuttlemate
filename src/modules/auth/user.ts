@@ -50,6 +50,9 @@ async function checkAccountStatus(
   }
 }
 
+/*
+  Create a user who does not exist.
+*/
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
 
@@ -64,20 +67,28 @@ async function createUser(username: string, pubkey: string) {
   fs.ensureDirSync(`data/${username}`);
 }
 
+/*
+  Switch the active account of the user
+*/
 async function switchActiveAccount(username: string, pubkey: string) {
   const db = await getDb();
-  const stmt =
-    "UPDATE users SET username=$username, active=1 WHERE pubkey=$pubkey";
-  db.prepare(stmt).run({ username, pubkey });
+  
+  // deactivate the rest
+  db.prepare("UPDATE users active=0 WHERE pubkey!=$pubkey").run({ pubkey });
 
-  // Rename home dir.
-  fs.renameSync(`data/${oldUsername}`, `data/${username}`);
+  // activate the account
+  db.prepare("UPDATE users SET username=$username, active=1 WHERE pubkey=$pubkey").run({ username, pubkey });
 }
 
-async function removeUser(username: string, pubkey: string) {}
+/*
+  Delete a user
+*/
+async function removeUser(username: string, pubkey: string) {
+  const db = await getDb();
+}
 
 export default async function handle(command: string, message: IMessage) {
-  const lcaseCommand = command.toLowerCase();  
+  const lcaseCommand = command.toLowerCase();
   const username = lcaseCommand.substr(9);
   if (isValidUsername(username)) {
     const accountStatus = await checkAccountStatus(username, message.author);

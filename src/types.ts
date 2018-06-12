@@ -5,3 +5,7 @@ export interface IScuttleBot {
   get(hash: string, args1: any, cb: (err: any, item: Msg<any>) => void): void;
   get(hash: string, cb: (err: any, item: Msg<any>) => void): void;
 }
+
+export interface IReply {
+  message: string;
+}

@@ -23,7 +23,8 @@ node_modules
 .lock-wscript
 
 dist/*
-db/scuttlemate.sqlite
+!db/placeholder
+db/*
 !data/placeholder
 data/*
 

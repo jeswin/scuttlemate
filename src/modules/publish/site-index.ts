@@ -16,6 +16,4 @@
   publish index ordered by date, length 10
 */
 
-export async function publishIndex() {
-  
-}
+export async function publishIndex() {}

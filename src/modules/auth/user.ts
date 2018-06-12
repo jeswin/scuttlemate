@@ -1,6 +1,7 @@
 import * as fs from "fs-extra";
 import { IMessage } from "..";
 import { createIndexes, createTable, getDb } from "../../db";
+import { IReply, IScuttleBot } from "../../types";
 
 export async function setup() {
   await createTable(
@@ -10,7 +11,8 @@ export async function setup() {
         pubkey TEXT  NOT NULL,
         username TEXT NOT NULL,
         is_primary INTEGER NOT NULL,
-        active INTEGER NOT NULL
+        active INTEGER NOT NULL,
+        custom_domain TEXT NOT NULL
       )`
   );
 
@@ -26,8 +28,9 @@ export async function setup() {
   Account Management
   ------------------
   user jeswin # Adds a username to the current pubkey, or makes it active if it already exists.
+  user jeswin domain jeswin.org # Sets custom domain for username
   user jeswin disable # Disables a username
-  user jeswin remove # Deletes a previously disabled username   
+  user jeswin remove # Deletes a previously disabled username
 */
 
 function isValidUsername(username: string) {
@@ -70,9 +73,12 @@ async function checkAccountStatus(
   }
 }
 
-/*
-  Create a user who does not exist.
-*/
+async function alreadyTaken(username: string, pubkey: string) {
+  return {
+    message: `The username ${username} already exists. Choose something else.`
+  };
+}
+
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
 
@@ -86,11 +92,15 @@ async function createUser(username: string, pubkey: string) {
 
   // Create home dir.
   fs.ensureDirSync(`data/${username}`);
+
+  return {
+    message: [
+      `Your profile is now accessible at https://scuttle.space/${username}.`,
+      `To learn how to use scuttlespace, see https://scuttle.space/help.`
+    ].join(`\r\n`)
+  };
 }
 
-/*
-  Switch the active account of the user
-*/
 async function switchActiveAccount(username: string, pubkey: string) {
   const db = await getDb();
 
@@ -101,37 +111,73 @@ async function switchActiveAccount(username: string, pubkey: string) {
   db.prepare(
     "UPDATE users SET username=$username, is_primary=1, active=1 WHERE pubkey=$pubkey"
   ).run({ username, pubkey });
+
+  return { message: `Switched to ${username}.` };
 }
 
-/*
-  Delete a user
-*/
 async function removeUser(username: string, pubkey: string) {
   const db = await getDb();
+  return { message: "" };
 }
 
-export async function handle(command: string, message: IMessage) {
+async function disableUser(username: string, pubkey: string) {
+  const db = await getDb();
+  return { message: "" };
+}
+
+async function setCustomDomain(
+  username: string,
+  domain: string,
+  pubkey: string
+) {
+  const db = await getDb();
+  return { message: "" };
+}
+
+async function didNotUnderstand() {
+  return {
+    message: `Sorry I did not follow that instruction. See https://scuttle.space/help.`
+  };
+}
+
+export async function handle(
+  command: string,
+  message: IMessage,
+  sbot: IScuttleBot
+): Promise<IReply | undefined> {
   const lcaseCommand = command.toLowerCase();
-  const username = lcaseCommand.substr(9);
-  if (isValidUsername(username)) {
-    const accountStatus = await checkAccountStatus(username, message.author);
-    if (accountStatus.type === "ALIAS") {
-      await switchActiveAccount(username, message.author);
-      return {
-        message: `Switched to ${username}.`
-      };
-    } else if (accountStatus.type === "AVAILABLE") {
-      await createUser(username, message.author);
-      return {
-        message: [
-          `Your profile is now accessible at https://scuttle.space/${username}.`,
-          `To learn how to use scuttlespace, see https://scuttle.space/help.`
-        ].join(`\r\n`)
-      };
-    } else if (accountStatus.type === "TAKEN") {
-      return {
-        message: `The username ${username} already exists. Choose something else.`
-      };
+  if (lcaseCommand.startsWith("user ")) {
+    const parts = command.split(" ");
+    if (parts.length >= 2) {
+      const username = parts[1].toLowerCase();
+      if (parts.length === 2) {
+        if (isValidUsername(username)) {
+          const accountStatus = await checkAccountStatus(
+            username,
+            message.author
+          );
+          const fn =
+            accountStatus.type === "ALIAS"
+              ? switchActiveAccount
+              : accountStatus.type === "AVAILABLE"
+                ? createUser
+                : alreadyTaken;
+
+          return fn(username, message.author);
+        }
+      } else {
+        if (parts[2].toLowerCase() === "remove") {
+          return await removeUser(username, message.author);
+        } else if (parts[2].toLowerCase() === "disable") {
+          return await disableUser(username, message.author);
+        } else if (parts[2].toLowerCase() === "domain") {
+          return await setCustomDomain(username, parts[2], message.author);
+        } else {
+          return await didNotUnderstand();
+        }
+      }
+    } else {
+      return await didNotUnderstand();
     }
   }
 }

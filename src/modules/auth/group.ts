@@ -1,5 +1,6 @@
 import { IMessage } from "..";
 import { createIndexes, createTable, getDb } from "../../db";
+import { IScuttleBot } from "../../types";
 
 export async function setup() {
   await createTable(
@@ -16,7 +17,6 @@ export async function setup() {
   await createIndexes("groups", ["name"]);
 }
 
-
 /*
   Supported commands.
   
@@ -28,4 +28,13 @@ export async function setup() {
   group scuttlers admin pubkey1
 */
 
-export async function handle(command: string, message: IMessage) {}
+export async function handle(
+  command: string,
+  message: IMessage,
+  sbot: IScuttleBot
+) {
+  const lcaseCommand = command.toLowerCase();
+  if (lcaseCommand.startsWith("group ")) {
+    const parts = command.split(" ");
+  }
+}

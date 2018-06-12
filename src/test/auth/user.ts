@@ -1,3 +1,4 @@
+import { getDb } from "../../db";
 import { IMessage } from "../../modules";
 import { handle } from "../../modules/auth/user";
 import { IScuttleBot } from "../../types";
@@ -23,8 +24,12 @@ export default function run(sbot: IScuttleBot) {
     it("creates a user", async () => {
       const command = "user jeswin";
       const message = createMessage({ text: `@scuttlespace ${command}` });
-      const result = await handle(command, message);
-      console.log(result);
+      const reply = await handle(command, message, sbot);
+
+      const db = await getDb();
+      const rows = db.prepare(`SELECT * FROM users`).all();
+      console.log({ rows });
+      console.log({ reply });
     });
   });
 }

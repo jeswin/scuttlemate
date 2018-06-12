@@ -31,3 +31,5 @@ export async function init(appName = "ssb") {
 export function getKeys() {
   return keys;
 }
+
+export const dbName = "db/scuttlemate.sqlite";

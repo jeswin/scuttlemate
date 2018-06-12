@@ -1,9 +1,25 @@
 import * as fs from "fs-extra";
 import { IMessage } from "..";
-import { getDb } from "../../db";
+import { createIndexes, createTable, getDb } from "../../db";
+
+export async function setup() {
+  await createTable(
+    "users",
+    `CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pubkey TEXT  NOT NULL,
+        username TEXT NOT NULL,
+        is_primary INTEGER NOT NULL,
+        active INTEGER NOT NULL
+      )`
+  );
+
+  await createIndexes("users", ["pubkey"]);
+  await createIndexes("users", ["username"]);
+}
 
 /*
-  Supported commands.
+  Supported commands
   
   A given pubkey can have multiple usernames associated with it, one of which will be in active state.
 
@@ -22,7 +38,7 @@ function isValidUsername(username: string) {
 type UserExistenceQueryResult =
   | { type: "TAKEN" }
   | { type: "AVAILABLE" }
-  | { type: "ALIAS"; active: boolean; primary: boolean };
+  | { type: "ALIAS"; active: boolean; isPrimary: boolean };
 
 async function checkAccountStatus(
   username: string,
@@ -39,7 +55,11 @@ async function checkAccountStatus(
       r => r.pubkey === pubkey && r.username === username
     );
     if (alias) {
-      return { type: "ALIAS", active: alias.active, primary: alias.primary };
+      return {
+        active: alias.active,
+        isPrimary: alias.isPrimary,
+        type: "ALIAS"
+      };
     } else if (results.every(r => r.username !== username)) {
       return { type: "AVAILABLE" };
     } else {
@@ -56,12 +76,13 @@ async function checkAccountStatus(
 async function createUser(username: string, pubkey: string) {
   const db = await getDb();
 
-  const removePrimaryStmt = "UPDATE users SET primary=0 WHERE pubkey=$pubkey";
-  db.prepare(removePrimaryStmt).run({ pubkey });
+  db.prepare("UPDATE users SET is_primary=0 WHERE pubkey=$pubkey").run({
+    pubkey
+  });
 
-  const stmt =
-    "INSERT INTO users (username, pubkey, primary, active) VALUES ($username, $pubkey, 1, 1)";
-  db.prepare(stmt).run({ username, pubkey });
+  db.prepare(
+    "INSERT INTO users (username, pubkey, is_primary, active) VALUES ($username, $pubkey, 1, 1)"
+  ).run({ username, pubkey });
 
   // Create home dir.
   fs.ensureDirSync(`data/${username}`);
@@ -72,12 +93,14 @@ async function createUser(username: string, pubkey: string) {
 */
 async function switchActiveAccount(username: string, pubkey: string) {
   const db = await getDb();
-  
+
   // deactivate the rest
   db.prepare("UPDATE users active=0 WHERE pubkey!=$pubkey").run({ pubkey });
 
   // activate the account
-  db.prepare("UPDATE users SET username=$username, active=1 WHERE pubkey=$pubkey").run({ username, pubkey });
+  db.prepare(
+    "UPDATE users SET username=$username, is_primary=1, active=1 WHERE pubkey=$pubkey"
+  ).run({ username, pubkey });
 }
 
 /*
@@ -87,7 +110,7 @@ async function removeUser(username: string, pubkey: string) {
   const db = await getDb();
 }
 
-export default async function handle(command: string, message: IMessage) {
+export async function handle(command: string, message: IMessage) {
   const lcaseCommand = command.toLowerCase();
   const username = lcaseCommand.substr(9);
   if (isValidUsername(username)) {

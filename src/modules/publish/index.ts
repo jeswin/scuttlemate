@@ -20,7 +20,7 @@ export async function setup() {
     )`
   );
 
-  await createIndexes("publish_posts", ["ssb_id"]);
+  await createIndexes("publish_posts", ["ssb_post_id"]);
 }
 
 /*

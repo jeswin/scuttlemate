@@ -1,9 +1,15 @@
+import * as config from "./config";
 import Database = require("better-sqlite3");
+
+let dbName = config.dbName;
+export async function setDbName(name: string) {
+  dbName = name;
+}
 
 let database: Database;
 export async function getDb() {
   if (!database) {
-    database = new Database("db/scuttlemate.sqlite");
+    database = new Database(dbName);
   }
   return database;
 }
@@ -25,8 +31,8 @@ export async function createTable(table: string, createStatement: string) {
 export async function createIndexes(table: string, fields: string[]) {
   const indexName = `${table}_${fields.join("_")}`;
   const db = await getDb();
-  db
-    .prepare(`CREATE INDEX ${indexName} ON ${table}(${fields.join(", ")})`)
-    .run();
+  db.prepare(
+    `CREATE INDEX ${indexName} ON ${table}(${fields.join(", ")})`
+  ).run();
   console.log(`Created index ${indexName} ON ${table}(${fields.join(", ")}).`);
 }

@@ -2,10 +2,10 @@ import { IScuttleBot } from "../../types";
 import { resetDb } from "../test";
 import changesPrimaryIdOnCreate from "./changes-primary-id-on-create";
 import createUser from "./creates-user";
+import destroysId from "./destroys-id";
 import disablesId from "./disables-id";
 import enablesId from "./enables-id";
 import switchPrimaryId from "./switches-primary-id";
-import destroysId from "./destroys-id";
 
 export function createMessage(msg: any) {
   const base = {

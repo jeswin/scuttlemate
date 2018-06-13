@@ -1,14 +1,14 @@
-import fs = require("fs");
 import "mocha";
 import "should";
+
+import fs = require("fs");
 import { Msg } from "ssb-typescript";
+
 import * as db from "../db";
-import { init as moduleSetup } from "../modules";
-import { setup as settingsSetup } from "../settings";
-import { IScuttleBot } from "../types";
-import auth from "./auth";
 import init from "../init";
 import { setConsoleLogging } from "../logger";
+import { IScuttleBot } from "../types";
+import auth from "./auth";
 
 const shouldLib = require("should");
 

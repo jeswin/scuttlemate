@@ -11,7 +11,7 @@ export async function setup() {
         pubkey TEXT  NOT NULL,
         username TEXT NOT NULL,
         is_primary INTEGER NOT NULL,
-        active INTEGER NOT NULL,
+        enabled INTEGER NOT NULL,
         custom_domain TEXT
       )`
   );
@@ -23,11 +23,11 @@ export async function setup() {
 /*
   Supported commands
   
-  A given pubkey can have multiple usernames associated with it, one of which will be in active state.
+  A given pubkey can have multiple usernames associated with it, one of which will be in is_primary state.
 
   Account Management
   ------------------
-  user jeswin # Adds a username to the current pubkey, or makes it active if it already exists.
+  user jeswin # Adds a username to the current pubkey, or makes it primary if it already exists.
   user jeswin domain jeswin.org # Sets custom domain for username
   user jeswin disable # Disables a username
   user jeswin enable # Enables a username
@@ -42,7 +42,7 @@ function isValidUsername(username: string) {
 type UserExistenceQueryResult =
   | { type: "TAKEN" }
   | { type: "AVAILABLE" }
-  | { type: "ALIAS"; active: boolean; isPrimary: boolean };
+  | { type: "ALIAS"; enabled: boolean; isPrimary: boolean };
 
 async function checkAccountStatus(
   username: string,
@@ -60,7 +60,7 @@ async function checkAccountStatus(
     );
     if (alias) {
       return {
-        active: alias.active,
+        enabled: alias.enabled,
         isPrimary: alias.isPrimary,
         type: "ALIAS"
       };
@@ -88,7 +88,7 @@ async function createUser(username: string, pubkey: string) {
   });
 
   db.prepare(
-    "INSERT INTO users (username, pubkey, is_primary, active) VALUES ($username, $pubkey, 1, 1)"
+    "INSERT INTO users (username, pubkey, is_primary, enabled) VALUES ($username, $pubkey, 1, 1)"
   ).run({ username, pubkey });
 
   // Create home dir.
@@ -102,7 +102,7 @@ async function createUser(username: string, pubkey: string) {
   };
 }
 
-async function switchActiveAccount(username: string, pubkey: string) {
+async function switchPrimaryAccount(username: string, pubkey: string) {
   const db = await getDb();
 
   // deactivate the rest
@@ -112,7 +112,7 @@ async function switchActiveAccount(username: string, pubkey: string) {
 
   // activate the account
   db.prepare(
-    "UPDATE users SET username=$username, is_primary=1, active=1 WHERE pubkey=$pubkey"
+    "UPDATE users SET is_primary=1, enabled=1 WHERE username=$username AND pubkey=$pubkey"
   ).run({ username, pubkey });
 
   return { message: `Switched to ${username}.` };
@@ -120,13 +120,47 @@ async function switchActiveAccount(username: string, pubkey: string) {
 
 async function disableUser(username: string, pubkey: string) {
   const db = await getDb();
-  return { message: "" };
+  db.prepare(
+    "UPDATE users SET enabled=0 WHERE username=$username AND pubkey=$pubkey"
+  ).run({ username, pubkey });
+  return { message: `The user ${username} was disabled.` };
 }
 
-async function removeUser(username: string, pubkey: string) {
+async function enableUser(username: string, pubkey: string) {
   const db = await getDb();
-  db.prepare("UPDATE users SET active=");
-  return { message: "" };
+  db.prepare(
+    "UPDATE users SET enabled=1 WHERE username=$username AND pubkey=$pubkey"
+  ).run({ username, pubkey });
+  return { message: `The user ${username} was enabled again.` };
+}
+
+async function destroyUser(username: string, pubkey: string) {
+  const db = await getDb();
+
+  // Allow deletes only on disabled users.
+  {
+    const row = db
+      .prepare(
+        "SELECT * FROM users WHERE username=$username AND pubkey=$pubkey"
+      )
+      .get({ username, pubkey });
+    if (row.enabled) {
+      return {
+        message: `You may only delete a disabled user. Try 'user ${username} disable' first.`
+      };
+    }
+  }
+
+  {
+    db.prepare(
+      "DELETE FROM users WHERE username=$username AND pubkey=$pubkey"
+    ).run({ username, pubkey });
+
+    fs.rmdirSync(`data/${username}`);
+    return {
+      message: `The user ${username} was destroyed.`
+    };
+  }
 }
 
 async function setCustomDomain(
@@ -162,7 +196,7 @@ export async function handle(
           );
           const fn =
             accountStatus.type === "ALIAS"
-              ? switchActiveAccount
+              ? switchPrimaryAccount
               : accountStatus.type === "AVAILABLE"
                 ? createUser
                 : alreadyTaken;
@@ -171,9 +205,13 @@ export async function handle(
         }
       } else {
         if (parts[2].toLowerCase() === "remove") {
-          return await removeUser(username, message.author);
+          return await destroyUser(username, message.author);
         } else if (parts[2].toLowerCase() === "disable") {
           return await disableUser(username, message.author);
+        } else if (parts[2].toLowerCase() === "enable") {
+          return await enableUser(username, message.author);
+        } else if (parts[2].toLowerCase() === "destroy") {
+          return await destroyUser(username, message.author);
         } else if (parts[2].toLowerCase() === "domain") {
           return await setCustomDomain(username, parts[2], message.author);
         } else {

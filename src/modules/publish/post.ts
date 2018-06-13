@@ -13,7 +13,7 @@ const ssbKeys = require("ssb-keys");
 /*
   Supported commands. [] denotes optional.
   
-  If the username is not provided the currently active username is used.
+  If the username is not provided the primary username is used.
   If the ssb_post_id is not provided, the message root is published.
 
   Publishing

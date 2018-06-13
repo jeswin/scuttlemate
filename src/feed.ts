@@ -1,4 +1,5 @@
 import { getDb } from "./db";
+import { log } from "./logger";
 import { IHandlerResponse } from "./modules";
 
 export async function getLastProcessedTimestamp() {
@@ -16,5 +17,5 @@ export async function updateLastProcessedTimestamp(timestamp: number) {
 }
 
 export async function respond(response: IHandlerResponse) {
-  console.log(response);
+  log(response.toString());
 }

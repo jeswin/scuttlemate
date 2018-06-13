@@ -12,7 +12,7 @@ export async function setup() {
         username TEXT NOT NULL,
         is_primary INTEGER NOT NULL,
         active INTEGER NOT NULL,
-        custom_domain TEXT NOT NULL
+        custom_domain TEXT
       )`
   );
 
@@ -30,6 +30,7 @@ export async function setup() {
   user jeswin # Adds a username to the current pubkey, or makes it active if it already exists.
   user jeswin domain jeswin.org # Sets custom domain for username
   user jeswin disable # Disables a username
+  user jeswin enable # Enables a username
   user jeswin remove # Deletes a previously disabled username
 */
 
@@ -105,7 +106,9 @@ async function switchActiveAccount(username: string, pubkey: string) {
   const db = await getDb();
 
   // deactivate the rest
-  db.prepare("UPDATE users active=0 WHERE pubkey!=$pubkey").run({ pubkey });
+  db.prepare("UPDATE users SET is_primary=0 WHERE pubkey!=$pubkey").run({
+    pubkey
+  });
 
   // activate the account
   db.prepare(
@@ -115,13 +118,14 @@ async function switchActiveAccount(username: string, pubkey: string) {
   return { message: `Switched to ${username}.` };
 }
 
-async function removeUser(username: string, pubkey: string) {
+async function disableUser(username: string, pubkey: string) {
   const db = await getDb();
   return { message: "" };
 }
 
-async function disableUser(username: string, pubkey: string) {
+async function removeUser(username: string, pubkey: string) {
   const db = await getDb();
+  db.prepare("UPDATE users SET active=");
   return { message: "" };
 }
 

@@ -1,15 +1,19 @@
+import fs = require("fs");
 import "mocha";
 import "should";
 import { Msg } from "ssb-typescript";
 import * as db from "../db";
-import { setup as moduleSetup } from "../modules";
+import { init as moduleSetup } from "../modules";
 import { setup as settingsSetup } from "../settings";
 import { IScuttleBot } from "../types";
 import auth from "./auth";
+import init from "../init";
+import { setConsoleLogging } from "../logger";
 
 const shouldLib = require("should");
 
-db.setDbName("db/test-db.sqlite");
+const dbName = "db/test-db.sqlite";
+db.setDbName(dbName);
 
 class MockSBot implements IScuttleBot {
   createLogStream(params: any): any {}
@@ -26,9 +30,14 @@ function mockSBot(): IScuttleBot {
 const sbot = mockSBot();
 
 describe("scuttlespace", async () => {
-  before(async () => {
-    await settingsSetup();
-    await moduleSetup();
-  });
   await auth(sbot);
 });
+
+export async function resetDb() {
+  setConsoleLogging(false);
+  if (fs.existsSync(dbName)) {
+    fs.unlinkSync(dbName);
+  }
+  db.resetDb();
+  await init();
+}

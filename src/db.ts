@@ -1,17 +1,22 @@
-import * as config from "./config";
 import Database = require("better-sqlite3");
+import * as config from "./config";
+import { log } from "./logger";
 
 let dbName = config.dbName;
 export async function setDbName(name: string) {
   dbName = name;
 }
 
-let database: Database;
+let database: Database | undefined;
 export async function getDb() {
   if (!database) {
     database = new Database(dbName);
   }
   return database;
+}
+
+export async function resetDb() {
+  database = undefined;
 }
 
 export async function databaseExists() {
@@ -25,7 +30,7 @@ export async function databaseExists() {
 export async function createTable(table: string, createStatement: string) {
   const db = await getDb();
   db.prepare(createStatement).run();
-  console.log(`Created ${table} table.`);
+  log(`Created ${table} table.`);
 }
 
 export async function createIndexes(table: string, fields: string[]) {
@@ -34,5 +39,5 @@ export async function createIndexes(table: string, fields: string[]) {
   db.prepare(
     `CREATE INDEX ${indexName} ON ${table}(${fields.join(", ")})`
   ).run();
-  console.log(`Created index ${indexName} ON ${table}(${fields.join(", ")}).`);
+  log(`Created index ${indexName} ON ${table}(${fields.join(", ")}).`);
 }

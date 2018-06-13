@@ -23,7 +23,7 @@ export const domain = process.env.SCUTTLESPACE_DOMAIN;
 export const botMention = `[@${botName}](${botPublicKey})`;
 
 let keys: any;
-export async function init(appName = "ssb") {
+export async function setup(appName = "ssb") {
   const configDir = path.join(home(), `.${appName}`);
   keys = ssbKeys.loadOrCreateSync(path.join(configDir, "secret"));
 }

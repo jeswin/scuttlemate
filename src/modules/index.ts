@@ -41,7 +41,7 @@ interface IScuttleSpaceModule {
 
 const modules: IScuttleSpaceModule[] = [auth, publish];
 
-export async function setup() {
+export async function init() {
   for (const mod of modules) {
     await mod.setup();
   }

@@ -42,11 +42,14 @@ export { default as setup } from "./setup";
 */
 
 const parser = humanist([
-  ["user", 1],
+  ["id", 1],
   ["enable", 0],
   ["disable", 0],
   ["destroy", 0],
-  ["domain", 1]
+  ["domain", 1],
+  ["admin", 1],
+  ["member", 1],
+  ["remove", 1]
 ]);
 
 export async function handle(
@@ -61,12 +64,11 @@ export async function handle(
     const pubkey = message.author;
     if (isValidIdentity(id)) {
       const identityStatus = await checkIdentityStatus(id, message.author);
-
-      return identityStatus.status === "TAKEN"
-        ? await alreadyTaken(id, pubkey)
-        : identityStatus.status === "AVAILABLE"
-          ? await createIdentity(id, pubkey)
-          : await modifyIdentity(id, pubkey);
+      return identityStatus.status === "AVAILABLE"
+        ? await createIdentity(id, pubkey)
+        : identityStatus.status === "TAKEN"
+          ? await alreadyTaken(id, pubkey)
+          : await modifyIdentity(identityStatus, args);
     }
   }
 }
@@ -76,12 +78,17 @@ function isValidIdentity(username: string) {
   return regex.test(username);
 }
 
+interface IExistingIdentityResult {
+  status: "ADMIN" | "MEMBER";
+  enabled: boolean;
+  id: string;
+  membershipType: string;
+  primaryIdentityName: string;
+  pubkey: string;
+}
+
 type IdentityStatusCheckResult =
-  | {
-      status: "ADMIN" | "MEMBER";
-      enabled: boolean;
-      primaryIdentityName: string;
-    }
+  | IExistingIdentityResult
   | { status: "AVAILABLE" }
   | { status: "TAKEN" };
 
@@ -98,10 +105,10 @@ async function checkIdentityStatus(
         i.name as identityName,
         ui.membership_type as membershipType,
         u.primary_identity_name as primaryIdentityName,
-        u.pubkey as pubkey,
+        u.pubkey as pubkey
       FROM user_identity ui
-      JOIN identity i ON ui.identity_id = i.id
-      JOIN user u on ui.user_id = u.id
+      JOIN identity i ON ui.identity_name = i.name
+      JOIN user u on ui.user_pubkey = u.pubkey
       WHERE identity_name=$id`
     )
     .get({ id });
@@ -112,7 +119,10 @@ async function checkIdentityStatus(
     if (identity.pubkey === pubkey) {
       return {
         enabled: identity.enabled,
+        id,
+        membershipType: identity.membershipType,
         primaryIdentityName: identity.primaryIdentityName,
+        pubkey,
         status: identity.membershipType === "ADMIN" ? "ADMIN" : "MEMBER"
       };
     } else {
@@ -123,40 +133,40 @@ async function checkIdentityStatus(
   }
 }
 
-async function alreadyTaken(id: string, pubkey: string) {
-  return {
-    message: `The username ${id} already exists. Choose something else.`
-  };
-}
-
-async function modifyIdentity(id: string, pubkey: string) {
-  return {
-    message: `Your profile is now accessible at https://scuttle.space/${id}.`
-  };
-}
-
 async function createIdentity(id: string, pubkey: string) {
   const db = await getDb();
 
   // See if the user already exists.
-  const user = db.prepare(sqlInsert("user", ["pubkey"])).get({ pubkey });
+  const user = db
+    .prepare(`SELECT * FROM user WHERE pubkey=$pubkey`)
+    .get({ pubkey });
 
   db.transaction(
-    [sqlInsert("identity", ["name=identity_name", "enabled=identity_enabled"])]
+    [
+      sqlInsert({
+        fields: ["name=identity_name", "enabled=identity_enabled"],
+        table: "identity"
+      })
+    ]
       .concat(
-        !user ? sqlInsert("user", ["pubkey", "primary_identity_name"]) : []
+        !user
+          ? sqlInsert({
+              fields: ["pubkey", "primary_identity_name"],
+              table: "user"
+            })
+          : "UPDATE user SET primary_identity_name=$primary_identity_name WHERE pubkey=$pubkey"
       )
       .concat(
-        sqlInsert("user_identity", [
-          "identity_name",
-          "user_pubkey=pubkey",
-          "membership_type"
-        ])
+        sqlInsert({
+          fields: ["identity_name", "user_pubkey=pubkey", "membership_type"],
+          table: "user_identity"
+        })
       )
   ).run({
     identity_enabled: 1,
     identity_name: id,
     membership_type: "ADMIN",
+    primary_identity_name: id,
     pubkey
   });
 
@@ -168,63 +178,85 @@ async function createIdentity(id: string, pubkey: string) {
   };
 }
 
-async function switchPrimaryAccount(id: string, pubkey: string) {
+async function alreadyTaken(id: string, pubkey: string) {
+  return {
+    message: `The username ${id} already exists. Choose something else.`
+  };
+}
+
+async function modifyIdentity(idRow: IExistingIdentityResult, args: any) {
+  if (isJustUsername(args)) {
+    return await switchPrimaryId(idRow.id, idRow.pubkey);
+  } else {
+    if (args.disable) {
+      return await disableId(idRow.id, idRow.membershipType);
+    } else if (args.enable) {
+      return await enableId(idRow.id, idRow.membershipType);
+    } else if (args.destroy) {
+      return await destroyId(idRow.id, idRow.membershipType, idRow.enabled);
+    }
+  }
+}
+
+async function switchPrimaryId(id: string, pubkey: string) {
   const db = await getDb();
 
   // deactivate the rest
-  db.prepare("UPDATE users SET is_primary=0 WHERE pubkey!=$pubkey").run({
-    pubkey
-  });
-
-  // activate the account
   db.prepare(
-    "UPDATE users SET is_primary=1, enabled=1 WHERE username=$username AND pubkey=$pubkey"
+    "UPDATE user SET primary_identity_name=$id WHERE pubkey=$pubkey"
   ).run({ id, pubkey });
 
   return { message: `Switched to ${id}.` };
 }
 
-async function disableUser(id: string, pubkey: string) {
-  const db = await getDb();
-  db.prepare(
-    "UPDATE users SET enabled=0 WHERE username=$username AND pubkey=$pubkey"
-  ).run({ id, pubkey });
-  return { message: `The user ${id} was disabled.` };
+async function disableId(id: string, membershipType: string) {
+  if (membershipType === "ADMIN") {
+    const db = await getDb();
+    db.prepare("UPDATE identity SET enabled=0 WHERE name=$id").run({ id });
+    return { message: `The id ${id} was disabled.` };
+  } else {
+    return {
+      message: `You don't have permissions to disable the id ${id}.`
+    };
+  }
 }
 
-async function enableUser(id: string, pubkey: string) {
-  const db = await getDb();
-  db.prepare(
-    "UPDATE users SET enabled=1 WHERE username=$username AND pubkey=$pubkey"
-  ).run({ id, pubkey });
-  return { message: `The user ${id} was enabled again.` };
+async function enableId(id: string, membershipType: string) {
+  if (membershipType === "ADMIN") {
+    const db = await getDb();
+    db.prepare("UPDATE identity SET enabled=1 WHERE name=$id").run({ id });
+    return { message: `The id ${id} was enabled again.` };
+  } else {
+    return {
+      message: `You don't have permissions to enable the id ${id}.`
+    };
+  }
 }
 
-async function destroyUser(id: string, pubkey: string) {
-  const db = await getDb();
-
-  // Allow deletes only on disabled users.
-  {
-    const row = db
-      .prepare(
-        "SELECT * FROM users WHERE username=$username AND pubkey=$pubkey"
-      )
-      .get({ id, pubkey });
-    if (row.enabled) {
+async function destroyId(id: string, membershipType: string, enabled: boolean) {
+  if (membershipType === "ADMIN") {
+    if (enabled) {
       return {
-        message: `You may only delete a disabled user. Try 'user ${id} disable' first.`
+        message: `You may only delete a disabled id. Try 'id ${id} disable' first.`
+      };
+    } else {
+      const db = await getDb();
+      db.transaction([
+        `DELETE FROM user_identity WHERE identity_name=$id`,
+        `DELETE FROM identity WHERE name=$id`,
+        `UPDATE user SET primary_identity_name=null 
+          WHERE primary_identity_name=$id`
+      ]).run({ id });
+
+      fs.rmdirSync(`data/${id}`);
+
+      return {
+        message: `The id ${id} was deleted. Everything is gone.`
       };
     }
-  }
-
-  {
-    db.prepare(
-      "DELETE FROM users WHERE username=$username AND pubkey=$pubkey"
-    ).run({ id, pubkey });
-
-    fs.rmdirSync(`data/${id}`);
+  } else {
     return {
-      message: `The user ${id} was destroyed.`
+      message: `You don't have permissions to delete the id ${id}.`
     };
   }
 }

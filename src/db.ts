@@ -50,12 +50,15 @@ function paramsFromField(fields: string[]) {
   return fields.map(x => (x.includes("=") ? x.split("=")[1] : x));
 }
 
-export function sqlInsert(table: string, fields: string[]) {
-  return `INSERT INTO ${table} (${columnsFromField(fields).join(
+export function sqlInsert(args: { table: string; fields: string[] }) {
+  const { table, fields } = args;
+  const sql = `INSERT INTO ${table} (${columnsFromField(fields).join(
     ", "
   )}) VALUES(${paramsFromField(fields)
     .map(x => `$${x}`)
     .join(", ")})`;
+
+  return sql;
 }
 
 // const begin = db.prepare('BEGIN');

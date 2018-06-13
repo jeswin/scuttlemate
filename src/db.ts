@@ -41,3 +41,36 @@ export async function createIndexes(table: string, fields: string[]) {
   ).run();
   log(`Created index ${indexName} ON ${table}(${fields.join(", ")}).`);
 }
+
+function columnsFromField(fields: string[]) {
+  return fields.map(x => (x.includes("=") ? x.split("=")[0] : x));
+}
+
+function paramsFromField(fields: string[]) {
+  return fields.map(x => (x.includes("=") ? x.split("=")[1] : x));
+}
+
+export function sqlInsert(table: string, fields: string[]) {
+  return `INSERT INTO ${table} (${columnsFromField(fields).join(
+    ", "
+  )}) VALUES(${paramsFromField(fields)
+    .map(x => `$${x}`)
+    .join(", ")})`;
+}
+
+// const begin = db.prepare('BEGIN');
+// const commit = db.prepare('COMMIT');
+// const rollback = db.prepare('ROLLBACK');
+
+// // Higher order function - returns a function that always runs in a transaction
+// async function asTransaction(func: any) {
+//   return function (...args) {
+//     begin.run();
+//     try {
+//       func(...args);
+//       commit.run();
+//     } finally {
+//       if (db.inTransaction) rollback.run();
+//     }
+//   };
+// }

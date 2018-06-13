@@ -58,7 +58,7 @@ export async function handle(
         return await publishIndex();
       } else {
         throw new Error(
-          `That message was not understood. See https://scuttle.space/help.`
+          `Sorry I did not follow that instruction. See https://scuttle.space/help.`
         );
       }
     }

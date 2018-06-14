@@ -1,6 +1,6 @@
 import { Msg, PostContent } from "ssb-typescript";
 import { botPublicKey } from "../config";
-import { IScuttleBot } from "../types";
+import { IMessageSource } from "../types";
 import * as auth from "./auth";
 import * as publish from "./publish";
 
@@ -35,7 +35,7 @@ export function toMessage(item: Msg<PostContent>): IMessage {
 }
 
 interface IScuttleSpaceModule {
-  handle(command: string, message: IMessage, sbot: IScuttleBot): Promise<IHandlerResponse | void>;
+  handle(command: string, message: IMessage, msgSource: IMessageSource): Promise<IHandlerResponse | void>;
   setup(): Promise<void>;
 }
 
@@ -55,7 +55,7 @@ export interface IHandlerResponse {
   message?: string;
 }
 
-export async function handle(msg: Msg<PostContent>, sbot: IScuttleBot): Promise<IHandlerResponse> {
+export async function handle(msg: Msg<PostContent>, msgSource: IMessageSource): Promise<IHandlerResponse> {
   const state = await loadState(msg.value.author);
   const message = toMessage(msg);
   const command = message.text
@@ -63,7 +63,7 @@ export async function handle(msg: Msg<PostContent>, sbot: IScuttleBot): Promise<
     .trim();
 
   for (const mod of modules) {
-    const result = await mod.handle(command, message, sbot);
+    const result = await mod.handle(command, message, msgSource);
     if (result) {
       saveState(state, msg.value.author);
       return result;

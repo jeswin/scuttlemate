@@ -4,7 +4,7 @@ import * as feed from "./feed";
 import init from "./init";
 import { log } from "./logger";
 import { handle } from "./modules";
-import { IScuttleBot } from "./types";
+import { IMessageSource } from "./types";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
@@ -44,19 +44,19 @@ async function startServer() {
   // Setup a timer to continuously update the timestamp
   setInterval(updateTimestamp, 1000);
 
-  ssbClient((err: any, sbot: IScuttleBot) => {
+  ssbClient((err: any, msgSource: IMessageSource) => {
     pull(
-      sbot.createLogStream({
+      msgSource.createLogStream({
         gte: lastProcessedTimestamp + 1,
         live: true,
         private: true
       }),
-      processMessage(sbot)
+      processMessage(msgSource)
     );
   });
 }
 
-function processMessage(sbot: IScuttleBot) {
+function processMessage(msgSource: IMessageSource) {
   return async (read: any) => {
     read(null, function next(end: boolean, item: Msg<any>) {
       if (counter > 0 && counter % 10000 === 0) {
@@ -78,7 +78,7 @@ function processMessage(sbot: IScuttleBot) {
         lastProcessedTimestamp = item.timestamp;
 
         if (postIsCommand(item)) {
-          handle(item, sbot).then(response => {
+          handle(item, msgSource).then(response => {
             feed
               .respond(response)
               .catch((err: Error) =>

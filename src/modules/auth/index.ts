@@ -2,7 +2,7 @@ import humanist, { IResult as IHumanistResult } from "humanist";
 
 import { IMessage } from "..";
 import { getDb, sqlInsert } from "../../db";
-import { IReply, IScuttleBot } from "../../types";
+import { IReply, IMessageSource } from "../../types";
 import alreadyTaken from "./already-taken";
 import createIdentity from "./create-identity";
 import modifyIdentity from "./modify-identity";
@@ -57,7 +57,7 @@ const parser = humanist([
 export async function handle(
   command: string,
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IReply | undefined> {
   const lcaseCommand = command.toLowerCase();
   if (lcaseCommand.startsWith("id ")) {

@@ -1,6 +1,6 @@
 import { IHandlerResponse, IMessage } from "..";
 import { createIndexes, createTable } from "../../db";
-import { IScuttleBot } from "../../types";
+import { IMessageSource } from "../../types";
 import { publishPost, publishWithoutOptions } from "./post";
 import { publishIndex } from "./site-index";
 const ssbKeys = require("ssb-keys");
@@ -44,16 +44,16 @@ export async function setup() {
 export async function handle(
   command: string,
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IHandlerResponse | void> {
   if (command === "publish") {
-    return await publishWithoutOptions(message, sbot);
+    return await publishWithoutOptions(message, msgSource);
   } else if (command.startsWith("publish ")) {
     const parts = command.split(" ").filter(x => x.trim() !== "");
     if (parts.length > 1) {
       if (isSSBMessageId(parts[1])) {
         const postId = parts[1];
-        return await publishPost(postId, parts.slice(2), message, sbot);
+        return await publishPost(postId, parts.slice(2), message, msgSource);
       } else if (parts[1] === "index") {
         return await publishIndex();
       } else {

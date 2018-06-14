@@ -5,7 +5,7 @@ import { IHandlerResponse, IMessage } from "..";
 import * as config from "../../config";
 import { getDb } from "../../db";
 import { getPathForDocument } from "../../services/cms";
-import { IScuttleBot } from "../../types";
+import { IMessageSource } from "../../types";
 import * as home from "../home";
 
 const ssbKeys = require("ssb-keys");
@@ -37,14 +37,14 @@ const publishPostParser = humanist(publishPostSchema);
 
 export async function publishWithoutOptions(
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IHandlerResponse | void> {
   if (message.root) {
-    const post = await createPost(message.root, sbot);
+    const post = await createPost(message.root, msgSource);
     const publishResult = await publishImpl(
       { ...post, ssbPostId: message.root, allowComments: true },
       message,
-      sbot
+      msgSource
     );
     return {
       message: `The article was published at https://www.scuttle.space/${getPathForDocument(
@@ -63,14 +63,14 @@ export async function publishPost(
   postId: string,
   parts: string[],
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IHandlerResponse | void> {
   const options = publishPostParser(parts);
-  const post = await createPost(postId, sbot);
+  const post = await createPost(postId, msgSource);
   const publishResult = await publishImpl(
     { ...post, ssbPostId: postId, allowComments: true },
     message,
-    sbot
+    msgSource
   );
   return {
     message: `TODO` // `The article was published at https://www.scuttle.space/${"TODO"}/`
@@ -81,9 +81,9 @@ export async function publishPost(
   The the root item of a thread.
   When you just say 'publish' it is the root that needs to get published.
 */
-function getItemRootText(key: string, sbot: IScuttleBot): Promise<string> {
+function getItemRootText(key: string, msgSource: IMessageSource): Promise<string> {
   return new Promise((resolve, reject) => {
-    sbot.get(key, (err, post: any) => {
+    msgSource.get(key, (err, post: any) => {
       if (!err) {
         if (typeof post.content === "string") {
           const content = ssbKeys.unbox(post.content, config.getKeys());
@@ -101,8 +101,8 @@ function getItemRootText(key: string, sbot: IScuttleBot): Promise<string> {
 /*
   Gets the html of the thread, by loading the root item.
 */
-async function createPost(key: string, sbot: IScuttleBot) {
-  const text = await getItemRootText(key, sbot);
+async function createPost(key: string, msgSource: IMessageSource) {
+  const text = await getItemRootText(key, msgSource);
 
   // The root could be a private message.
   // In which case strip everything before the public key.
@@ -167,7 +167,7 @@ function stringToSlug(str: string) {
 */
 async function publish(
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IHandlerResponse | void> {}
 
 interface IPublishable {
@@ -190,7 +190,7 @@ interface IPublishResult {
 async function publishImpl(
   post: IPublishable,
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ): Promise<IPublishResult> {
   // Check if the slug exists.
   const insert = `INSERT 
@@ -202,8 +202,8 @@ async function publishImpl(
   const stmt = db.prepare(insert);
   stmt.run(post);
 
-  await writeToDisk(post, message, sbot);
-  await regenerateHomePageSnippet(post, message, sbot);
+  await writeToDisk(post, message, msgSource);
+  await regenerateHomePageSnippet(post, message, msgSource);
 
   return { url: "https://www.example.com/todo" };
 }
@@ -221,7 +221,7 @@ Write the file out to the user's pub directory
 async function writeToDisk(
   spost: IPublishable,
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ) {}
 
 /*
@@ -230,7 +230,7 @@ Write the file out to the user's pub directory
 async function regenerateHomePageSnippet(
   spost: IPublishable,
   message: IMessage,
-  sbot: IScuttleBot
+  msgSource: IMessageSource
 ) {
   await home.regenerate();
 }

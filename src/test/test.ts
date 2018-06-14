@@ -7,7 +7,7 @@ import { Msg } from "ssb-typescript";
 import * as db from "../db";
 import init from "../init";
 import { setConsoleLogging } from "../logger";
-import { IScuttleBot } from "../types";
+import { IMessageSource } from "../types";
 import auth from "./auth";
 
 const shouldLib = require("should");
@@ -15,7 +15,7 @@ const shouldLib = require("should");
 const dbName = "db/test-db.sqlite";
 db.setDbName(dbName);
 
-class MockSBot implements IScuttleBot {
+class MockSBot implements IMessageSource {
   createLogStream(params: any): any {}
 
   get(hash: string, cb: (err: any, item: Msg<any>) => void): void;
@@ -23,14 +23,14 @@ class MockSBot implements IScuttleBot {
   get(x: any): any {}
 }
 
-function mockSBot(): IScuttleBot {
+function mockSBot(): IMessageSource {
   return new MockSBot();
 }
 
-const sbot = mockSBot();
+const msgSource = mockSBot();
 
 describe("scuttlespace", async () => {
-  await auth(sbot);
+  await auth(msgSource);
 });
 
 export async function resetDb() {

@@ -2,15 +2,15 @@ import fs = require("fs");
 import { createMessage } from ".";
 import { getDb } from "../../db";
 import { handle } from "../../modules/auth";
-import { IScuttleBot } from "../../types";
+import { IMessageSource } from "../../types";
 
 const shouldLib = require("should");
 
-export default function(sbot: IScuttleBot) {
+export default function(msgSource: IMessageSource) {
   return async () => {
     const command = "id jeswin";
     const message = createMessage({ text: `@scuttlespace ${command}` });
-    const reply = await handle(command, message, sbot);
+    const reply = await handle(command, message, msgSource);
 
     shouldLib.exist(reply);
     const _ =

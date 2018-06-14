@@ -1,13 +1,13 @@
-import { IScuttleBot } from "../../types";
+import { IMessageSource } from "../../types";
 import { resetDb } from "../test";
 import changesPrimaryIdOnCreate from "./changes-primary-id-on-create";
 import createUser from "./creates-user";
 import deletesId from "./deletes-id";
 import disablesId from "./disables-id";
+import doesNotDeleteIfEnabled from "./does-not-delete-if-enabled";
 import enablesId from "./enables-id";
 import setsCustomDomain from "./sets-custom-domain";
 import switchPrimaryId from "./switches-primary-id";
-import doesNotDeleteIfEnabled from "./does-not-delete-if-enabled";
 
 export function createMessage(msg: any) {
   const base = {
@@ -25,55 +25,27 @@ export function createMessage(msg: any) {
   return { ...base, ...msg };
 }
 
-export default function run(sbot: IScuttleBot) {
+export default function run(msgSource: IMessageSource) {
   describe("auth", async () => {
     beforeEach(async () => await resetDb());
 
-    it("creates a user", createUser(sbot));
+    it("creates a user", createUser(msgSource));
 
     it(
       "changes primary id when a new user is created",
-      changesPrimaryIdOnCreate(sbot)
+      changesPrimaryIdOnCreate(msgSource)
     );
 
-    it("switches the primary id", switchPrimaryId(sbot));
+    it("switches the primary id", switchPrimaryId(msgSource));
 
-    it("disables an id", disablesId(sbot));
+    it("disables an id", disablesId(msgSource));
 
-    it("disables an id", enablesId(sbot));
+    it("disables an id", enablesId(msgSource));
 
-    it("deletes an id", deletesId(sbot));
+    it("deletes an id", deletesId(msgSource));
 
-    it("does not deletes if id is enabled", doesNotDeleteIfEnabled(sbot));
-    
-    it("sets a custom domain", setsCustomDomain(sbot));
+    it("does not deletes if id is enabled", doesNotDeleteIfEnabled(msgSource));
 
-    // it("does not remove a user if enabled", async () => {
-    //   const command1 = "user jeswin";
-    //   const message1 = createMessage({ text: `@scuttlespace ${command1}` });
-    //   const reply1 = await handle(command1, message1, sbot);
-
-    //   const command2 = "user jeswin destroy";
-    //   const message2 = createMessage({ text: `@scuttlespace ${command2}` });
-    //   const reply2 = await handle(command2, message2, sbot);
-
-    //   shouldLib.exist(reply2);
-    //   const _ =
-    //     reply2 &&
-    //     reply2.message.should.equal(
-    //       "You may only delete a disabled user. Try 'user jeswin disable' first."
-    //     );
-
-    //   {
-    //     const db = await getDb();
-    //     const rows = db
-    //       .prepare(`SELECT * FROM users WHERE username="jeswin"`)
-    //       .all();
-    //     rows.length.should.equal(1);
-
-    //     fs.existsSync(`data/jeswin`).should.be.true();
-    //   }
-    // });
-
+    it("sets a custom domain", setsCustomDomain(msgSource));
   });
 }

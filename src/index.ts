@@ -3,7 +3,6 @@ import * as config from "./config";
 import * as feed from "./feed";
 import init from "./init";
 import { log } from "./logger";
-import { handle } from "./modules";
 import { IMessageSource } from "./types";
 
 const pull = require("pull-stream");
@@ -18,12 +17,15 @@ let counter = 0;
 const startTime = Date.now();
 let counterLogTime = startTime;
 
+/*
+  Entry Point
+*/
 async function main() {
   await init();
   if (Object.keys(argv).length > 1) {
     await admin();
   } else {
-    await startServer();
+    await startAgent();
   }
 }
 
@@ -41,7 +43,11 @@ async function admin() {
   }
 }
 
-async function startServer() {
+/*
+  Start the agent.
+  Now we're constantly listening for messages.
+*/
+async function startAgent() {
   lastProcessedTimestamp = await feed.getLastProcessedTimestamp();
   previouslyWrittenTimestamp = lastProcessedTimestamp;
   log(`last_processed_timestamp: ${lastProcessedTimestamp}`);
@@ -61,6 +67,12 @@ async function startServer() {
   });
 }
 
+/*
+  This is where message processing happens.
+  We find a handler that handles the command.
+  If a handler returns undefined, we try the next one.
+  Until we run out of handlers - then we do nothing.
+*/
 function processMessage(msgSource: IMessageSource) {
   return async (read: any) => {
     read(null, function next(end: boolean, item: Msg<any>) {
@@ -82,7 +94,7 @@ function processMessage(msgSource: IMessageSource) {
       if (item && item.value) {
         lastProcessedTimestamp = item.timestamp;
 
-        if (postIsCommand(item)) {
+        if (messageIsCommand(item)) {
           handle(item, msgSource).then(response => {
             feed
               .respond(response)
@@ -101,6 +113,10 @@ function processMessage(msgSource: IMessageSource) {
   };
 }
 
+/*
+  Write the new timestamp to the disk.
+  The timestamps are monotonic; they don't repeat.
+*/
 async function updateTimestamp() {
   if (lastProcessedTimestamp !== previouslyWrittenTimestamp) {
     await feed.updateLastProcessedTimestamp(lastProcessedTimestamp);
@@ -108,7 +124,11 @@ async function updateTimestamp() {
   }
 }
 
-function postIsCommand(item: any): item is Msg<any> {
+/*
+  Message is a command if it is addressed to scuttlespace.
+  We check against scuttlespace's public key.
+*/
+function messageIsCommand(item: any): item is Msg<any> {
   return (
     item.value &&
     item.value.content &&

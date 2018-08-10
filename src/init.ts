@@ -3,7 +3,6 @@ import winston = require("winston");
 import { dbName, setup as initConfig } from "./config";
 import * as db from "./db";
 import { init as initLogger } from "./logger";
-import { init as setupModules } from "./modules";
 import { setup as setupSettings } from "./settings";
 
 export default async function init() {
@@ -15,6 +14,5 @@ export default async function init() {
 async function setupDatabase() {
   if (!existsSync(dbName)) {
     await setupSettings();
-    await setupModules();
   }
 }

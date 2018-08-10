@@ -27,6 +27,11 @@ async function main() {
   }
 }
 
+/*
+  CLI Options
+  --timestamp <number>
+    Reset the time stamp
+*/
 async function admin() {
   if (argv.timestamp) {
     log(`Reset timestamp to ${argv.timestamp}.`);
@@ -103,12 +108,10 @@ async function updateTimestamp() {
   }
 }
 
-function postIsCommand(item: any): item is Msg<PostContent> {
+function postIsCommand(item: any): item is Msg<any> {
   return (
     item.value &&
     item.value.content &&
-    item.value.content.type === "post" &&
-    item.value.content.text &&
     Array.isArray(item.value.content.mentions) &&
     item.value.content.mentions.some((x: any) => x.link === config.botPublicKey)
   );

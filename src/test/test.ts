@@ -8,7 +8,6 @@ import * as db from "../db";
 import init from "../init";
 import { setConsoleLogging } from "../logger";
 import { IMessageSource } from "../types";
-import auth from "./auth";
 
 const shouldLib = require("should");
 

@@ -1,6 +1,7 @@
 import { Msg, PostContent } from "ssb-typescript";
 import * as config from "./config";
 import * as feed from "./feed";
+import { handle } from "./handler";
 import init from "./init";
 import { log } from "./logger";
 import { IMessageSource } from "./types";

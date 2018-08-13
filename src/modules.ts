@@ -33,11 +33,7 @@ export function toMessage(item: Msg<PostContent>): IMessage {
 }
 
 interface IScuttleSpaceModule {
-  handle(
-    command: string,
-    message: IMessage,
-    msgSource: IMessageSource
-  ): Promise<IHandlerResponse | void>;
+  handle(command: string, message: IMessage, msgSource: IMessageSource): Promise<IHandlerResponse | void>;
   setup(): Promise<void>;
 }
 
@@ -57,10 +53,7 @@ export interface IHandlerResponse {
   message?: string;
 }
 
-export async function handle(
-  msg: Msg<PostContent>,
-  msgSource: IMessageSource
-): Promise<IHandlerResponse> {
+export async function handle(msg: Msg<PostContent>, msgSource: IMessageSource): Promise<IHandlerResponse> {
   const state = await loadState(msg.value.author);
   const message = toMessage(msg);
   const command = message.text

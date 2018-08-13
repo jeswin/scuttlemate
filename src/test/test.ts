@@ -28,9 +28,7 @@ function mockSBot(): IMessageSource {
 
 const msgSource = mockSBot();
 
-describe("scuttlespace", async () => {
-  await auth(msgSource);
-});
+describe("scuttlespace", async () => {});
 
 export async function resetDb() {
   setConsoleLogging(false);

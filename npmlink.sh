@@ -1,3 +1,3 @@
-rm -rf ../scuttlespace-cli-user
+rm -rf ../scuttlespace-commands-user
 
-npm link ../scuttlespace-cli-user
+npm link ../scuttlespace-commands-user

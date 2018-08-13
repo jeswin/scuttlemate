@@ -4,7 +4,10 @@ import * as feed from "./feed";
 import { handle } from "./handler";
 import init from "./init";
 import { log } from "./logger";
-import { IMessageSource } from "./types";
+import { IScuttleBot } from "./types";
+import SBotAdapter from "./SBotAdapter";
+import { IMessageSource } from "scuttlespace-commands-common";
+import { ICallContext } from "standard-api";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
@@ -56,16 +59,28 @@ async function startAgent() {
   // Setup a timer to continuously update the timestamp
   setInterval(updateTimestamp, 1000);
 
-  ssbClient((err: any, msgSource: IMessageSource) => {
+  ssbClient((err: any, sbot: IScuttleBot) => {
+    const messageSource = new SBotAdapter(sbot);
     pull(
-      msgSource.createLogStream({
+      sbot.createLogStream({
         gte: lastProcessedTimestamp + 1,
         live: true,
         private: true
       }),
-      processMessage(msgSource)
+      processMessage(messageSource)
     );
   });
+}
+
+/*
+  A context for the call. 
+  This allows us to implement basic tracing.
+*/
+function createContext(msg: Msg<any>): ICallContext {
+  return {
+    id: "0",
+    session: "NA"
+  };
 }
 
 /*
@@ -74,7 +89,7 @@ async function startAgent() {
   If a handler returns undefined, we try the next one.
   Until we run out of handlers - then we do nothing.
 */
-function processMessage(msgSource: IMessageSource) {
+function processMessage(messageSource: IMessageSource) {
   return async (read: any) => {
     read(null, function next(end: boolean, item: Msg<any>) {
       if (counter > 0 && counter % 10000 === 0) {
@@ -96,7 +111,8 @@ function processMessage(msgSource: IMessageSource) {
         lastProcessedTimestamp = item.timestamp;
 
         if (messageIsCommand(item)) {
-          handle(item, msgSource).then(response => {
+          const context = createContext(item);
+          handle(item, messageSource, context).then((response: any) => {
             feed
               .respond(response)
               .catch((err: Error) =>

@@ -1,51 +1,23 @@
+import {
+  IConfig,
+  IHandlerResponse,
+  IMessageSource,
+  IScuttleSpaceModule
+} from "scuttlespace-commands-common";
 import { Msg, PostContent } from "ssb-typescript";
+import { ICallContext } from "standard-api";
 import { botPublicKey } from "./config";
-import { IMessageSource } from "./types";
-
-export interface IMessage {
-  author: string;
-  branch?: string | string[];
-  channel?: string;
-  key: string;
-  mentions?: string[];
-  root?: string;
-  text: string;
-  timestamp: number;
-  type: string;
-}
+import { IMessage } from "scuttlespace-commands-common";
 
 export interface IConversationState {
   contexts: string[];
 }
 
-export function toMessage(item: Msg<PostContent>): IMessage {
-  return {
-    author: item.value.author,
-    branch: item.value.content.branch,
-    channel: item.value.content.channel,
-    key: item.key,
-    mentions: item.value.content.mentions,
-    root: item.value.content.root,
-    text: item.value.content.text,
-    timestamp: item.timestamp,
-    type: item.value.content.type
-  };
-}
-
-interface IScuttleSpaceModule {
-  handle(
-    command: string,
-    message: IMessage,
-    msgSource: IMessageSource
-  ): Promise<IHandlerResponse | void>;
-  setup(): Promise<void>;
-}
-
 const modules: IScuttleSpaceModule[] = []; // [auth, publish];
 
-export async function init() {
+export async function init(config: IConfig) {
   for (const mod of modules) {
-    await mod.setup();
+    await mod.init(config);
   }
 }
 
@@ -53,22 +25,29 @@ async function loadState(pubkey: string) {}
 
 async function saveState(state: any, pubkey: string) {}
 
-export interface IHandlerResponse {
-  message?: string;
+export function toMessage(item: Msg<any>): IMessage<any> {
+  return {
+    author: item.value.author,
+    branch: item.value.content.branch,
+    channel: item.value.content.channel,
+    content: item.value.content,
+    key: item.key,
+    mentions: item.value.content.mentions,
+    root: item.value.content.root,
+    timestamp: item.timestamp,
+    type: item.value.content.type
+  };
 }
 
 export async function handle(
-  msg: Msg<PostContent>,
-  msgSource: IMessageSource
+  msg: Msg<any>,
+  msgSource: IMessageSource,
+  context: ICallContext
 ): Promise<IHandlerResponse> {
   const state = await loadState(msg.value.author);
-  const message = toMessage(msg);
-  const command = message.text
-    .substring(message.text.indexOf(botPublicKey) + botPublicKey.length + 1)
-    .trim();
 
   for (const mod of modules) {
-    const result = await mod.handle(command, message, msgSource);
+    const result = await mod.handle(toMessage(msg), msgSource, context);
     if (result) {
       saveState(state, msg.value.author);
       return result;

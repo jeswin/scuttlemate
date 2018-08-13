@@ -1,6 +1,6 @@
+import { IHandlerResponse } from "scuttlespace-commands-common";
 import { getDb } from "./db";
 import { log } from "./logger";
-import { IHandlerResponse } from "./modules";
 
 export async function getLastProcessedTimestamp() {
   const db = await getDb();

@@ -15,7 +15,7 @@ export const botPublicKey = process.env.SCUTTLESPACE_BOT_PKEY;
 // scuttle.space
 if (!process.env.SCUTTLESPACE_DOMAIN) {
   throw new Error(
-    "$SCUTTLESPACE_BOT_PKEY environment variable needs to be set."
+    "$SCUTTLESPACE_DOMAIN environment variable needs to be set."
   );
 }
 export const domain = process.env.SCUTTLESPACE_DOMAIN;

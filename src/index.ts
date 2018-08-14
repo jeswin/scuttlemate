@@ -1,13 +1,13 @@
-import { Msg, PostContent } from "ssb-typescript";
+import { IMessageSource } from "scuttlespace-commands-common";
+import { Msg } from "ssb-typescript";
+import { ICallContext } from "standard-api";
 import * as config from "./config";
 import * as feed from "./feed";
 import { handle } from "./handler";
 import init from "./init";
 import { log } from "./logger";
-import { IScuttleBot } from "./types";
 import SBotAdapter from "./SBotAdapter";
-import { IMessageSource } from "scuttlespace-commands-common";
-import { ICallContext } from "standard-api";
+import { IScuttleBot } from "./types";
 
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");

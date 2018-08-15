@@ -1,19 +1,19 @@
 import {
   IConfig,
   IHandlerResponse,
+  IMessage,
   IMessageSource,
-  IScuttleSpaceModule
+  IScuttlespaceCommandsModule
 } from "scuttlespace-commands-common";
 import { Msg, PostContent } from "ssb-typescript";
 import { ICallContext } from "standard-api";
 import { botPublicKey } from "./config";
-import { IMessage } from "scuttlespace-commands-common";
 
 export interface IConversationState {
   contexts: string[];
 }
 
-const modules: IScuttleSpaceModule[] = []; // [auth, publish];
+const modules: IScuttlespaceCommandsModule[] = []; // [auth, publish];
 
 export async function init(config: IConfig) {
   for (const mod of modules) {
@@ -47,7 +47,7 @@ export async function handle(
   const state = await loadState(msg.value.author);
 
   for (const mod of modules) {
-    const result = await mod.handle(toMessage(msg), msgSource, context);
+    const result = await mod.handle(toMessage(msg), msgSource, undefined as any, context);
     if (result) {
       saveState(state, msg.value.author);
       return result;
